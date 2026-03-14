@@ -1,1 +1,1 @@
-com.phalanx.beacon.sso.sdk.springboot.config.BeaconSsoSpringBootAutoConfiguration
+com.frontleaves.phalanx.beacon.sso.sdk.springboot.config.BeaconSsoSpringBootAutoConfiguration

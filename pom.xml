@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>com.phalanx.beacon.sso</groupId>
+    <groupId>com.frontleaves.phalanx.beacon.sso</groupId>
     <artifactId>bamboo-sso</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -56,7 +56,7 @@
         <dependencies>
             <!-- 内部模块 -->
             <dependency>
-                <groupId>com.phalanx.beacon.sso</groupId>
+                <groupId>com.frontleaves.phalanx.beacon.sso</groupId>
                 <artifactId>bamboo-sso-base</artifactId>
                 <version>${project.version}</version>
             </dependency>

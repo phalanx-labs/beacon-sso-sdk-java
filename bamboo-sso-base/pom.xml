@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.phalanx.beacon.sso</groupId>
+        <groupId>com.frontleaves.phalanx.beacon.sso</groupId>
         <artifactId>bamboo-sso</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
