@@ -1,62 +1,66 @@
-name: Deploy to Maven Central
+name: 构建和发布版本
 
 on:
   release:
-    types: [ published ]
+    types: [released]  # 发布 Release 时触发（非 draft/prerelease）
+
+permissions:
+  contents: write  # 允许上传 Release assets
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: Extract version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      - name: 提取版本号并更新 POM
+        run: |
+          # 从 tag (v2.0.0) 提取版本号 (2.0.0)
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          VERSION="${RELEASE_TAG#v}"
+          echo "Release Tag: $RELEASE_TAG"
+          echo "Version: $VERSION"
+          # 更新所有模块的 pom.xml 版本
+          mvn versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Set up JDK 17
+      - name: 设置 JDK
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
           server-id: central
-          server-username: OSSRH_USERNAME
-          server-password: OSSRH_TOKEN
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
 
-      - name: Setup Maven settings
-        run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/settings.xml << EOF
-          <settings>
-            <servers>
-              <server>
-                <id>central</id>
-                <username>\${OSSRH_USERNAME}</username>
-                <password>\${OSSRH_TOKEN}</password>
-              </server>
-            </servers>
-          </settings>
-          EOF
-
-      - name: Import GPG key
+      - name: 配置 GPG 签名
         uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg_private_key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
 
-      - name: Deploy to Maven Central
-        env:
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+      - name: 发布到 Maven 中央仓库
         run: mvn clean deploy -P release -DskipTests
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: maven-artifacts-${{ steps.get_version.outputs.VERSION }}
-          path: |
-            **/target/*.jar
-            **/target/*.pom
-          retention-days: 30
+      - name: 上传构建产物到 Release
+        run: |
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          echo "Looking for JAR files to upload..."
+          JAR_FILES=$(find . -path "./*/target/*.jar" -not -name "*-sources.jar" -not -name "*-javadoc.jar" -not -name "original-*.jar")
+          if [ -z "$JAR_FILES" ]; then
+            echo "No JAR files found!"
+            exit 1
+          fi
+          echo "$JAR_FILES" | while read jar; do
+            if [ -n "$jar" ]; then
+              echo "Uploading: $jar"
+              gh release upload "$RELEASE_TAG" "$jar" --clobber
+            fi
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
