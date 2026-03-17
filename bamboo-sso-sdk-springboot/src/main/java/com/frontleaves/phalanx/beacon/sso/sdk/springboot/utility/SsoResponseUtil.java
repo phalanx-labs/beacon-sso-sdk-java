@@ -23,7 +23,7 @@ public final class SsoResponseUtil {
      * 私有构造函数，防止实例化
      */
     private SsoResponseUtil() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+        throw new UnsupportedOperationException("工具类不能被实例化");
     }
 
     /**

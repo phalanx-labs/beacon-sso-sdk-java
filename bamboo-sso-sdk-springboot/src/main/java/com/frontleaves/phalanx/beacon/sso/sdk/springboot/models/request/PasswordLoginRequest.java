@@ -1,4 +1,4 @@
-package com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto;
+package com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 密码登录请求 DTO
+ * 密码登录请求
  *
  * @author xiao_lfeng
  * @since 0.0.1
@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PasswordLoginRequestDTO {
+public class PasswordLoginRequest {
 
     /**
      * 用户名/邮箱/手机号

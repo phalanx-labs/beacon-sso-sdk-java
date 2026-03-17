@@ -1,15 +1,16 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.config;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.config.BeaconSsoAutoConfiguration;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.AuthLogic;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.BusinessLogic;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.OAuthLogic;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.UserLogic;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.BusinessLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.OAuthTokenRepository;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.UserinfoRepository;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.AccountController;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.AuthController;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.MerchantController;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.PublicController;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.UserController;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -118,33 +119,67 @@ public class BeaconSsoSpringBootAutoConfiguration {
      * 创建 UserController Bean
      * <p>
      * 提供获取当前用户信息的 REST API 端点。
-     * 仅在启用 gRPC 且存在 UserLogic Bean 时创建。
+     * 仅在启用 gRPC 且存在 SsoRequest Bean 时创建。
      * </p>
      *
-     * @param userLogic 用户业务逻辑处理类
+     * @param ssoRequest SSO 统一请求门面
      * @return UserController 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(UserLogic.class)
-    public UserController userController(UserLogic userLogic) {
-        return new UserController(userLogic);
+    @ConditionalOnBean(SsoRequest.class)
+    public UserController userController(SsoRequest ssoRequest) {
+        return new UserController(ssoRequest);
     }
 
     /**
      * 创建 AccountController Bean
      * <p>
      * 提供邮箱注册、密码登录与修改密码的 REST API 端点。
-     * 仅在启用 gRPC 且存在 AuthLogic Bean 时创建。
+     * 仅在启用 gRPC 且存在 SsoRequest Bean 时创建。
      * </p>
      *
-     * @param authLogic 认证业务逻辑
+     * @param ssoRequest SSO 统一请求门面
      * @return AccountController 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(AuthLogic.class)
-    public AccountController accountController(AuthLogic authLogic) {
-        return new AccountController(authLogic);
+    @ConditionalOnBean(SsoRequest.class)
+    public AccountController accountController(SsoRequest ssoRequest) {
+        return new AccountController(ssoRequest);
+    }
+
+    /**
+     * 创建 PublicController Bean
+     * <p>
+     * 提供发送注册验证码等公开 API 端点。
+     * 仅在启用 gRPC 且存在 SsoRequest Bean 时创建。
+     * </p>
+     *
+     * @param ssoRequest SSO 统一请求门面
+     * @return PublicController 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(SsoRequest.class)
+    public PublicController publicController(SsoRequest ssoRequest) {
+        return new PublicController(ssoRequest);
+    }
+
+    /**
+     * 创建 MerchantController Bean
+     * <p>
+     * 提供商户标签查询、公告获取等 REST API 端点。
+     * 仅在启用 gRPC 且存在 SsoRequest Bean 时创建。
+     * </p>
+     *
+     * @param ssoRequest SSO 统一请求门面
+     * @return MerchantController 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(SsoRequest.class)
+    public MerchantController merchantController(SsoRequest ssoRequest) {
+        return new MerchantController(ssoRequest);
     }
 }

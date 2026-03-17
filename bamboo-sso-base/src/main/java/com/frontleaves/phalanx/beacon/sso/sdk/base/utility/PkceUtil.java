@@ -49,7 +49,7 @@ public final class PkceUtil {
      * 私有构造函数，防止实例化
      */
     private PkceUtil() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+        throw new UnsupportedOperationException("工具类不能被实例化");
     }
 
     /**
@@ -78,7 +78,7 @@ public final class PkceUtil {
     public static String generateCodeVerifier(int length) {
         if (length < CODE_VERIFIER_MIN_LENGTH || length > CODE_VERIFIER_MAX_LENGTH) {
             throw new IllegalArgumentException(
-                    String.format("Code verifier length must be between %d and %d, but was: %d",
+                    String.format("Code Verifier 长度必须在 %d 和 %d 之间，当前为: %d",
                             CODE_VERIFIER_MIN_LENGTH, CODE_VERIFIER_MAX_LENGTH, length)
             );
         }
@@ -108,7 +108,7 @@ public final class PkceUtil {
      */
     public static String generateCodeChallenge(String codeVerifier) {
         if (codeVerifier == null || codeVerifier.isEmpty()) {
-            throw new IllegalArgumentException("Code verifier cannot be null or empty");
+            throw new IllegalArgumentException("Code Verifier 不能为空");
         }
 
         try {
@@ -117,7 +117,7 @@ public final class PkceUtil {
             return BASE64_URL_ENCODER.encodeToString(hash);
         } catch (NoSuchAlgorithmException e) {
             // SHA-256 在所有 Java 实现中都必须可用
-            throw new IllegalStateException("SHA-256 algorithm not available", e);
+            throw new IllegalStateException("SHA-256 算法不可用", e);
         }
     }
 

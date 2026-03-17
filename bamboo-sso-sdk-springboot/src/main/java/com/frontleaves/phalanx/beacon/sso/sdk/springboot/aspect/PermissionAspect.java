@@ -88,15 +88,15 @@ public class PermissionAspect {
 
         // 如果没有指定权限要求，直接通过
         if (requiredPermissions.length == 0) {
-            log.debug("No specific permissions required, allowing access");
+            log.debug("未指定所需权限，允许访问");
             return;
         }
 
         // 获取请求对象
         HttpServletRequest request = getRequest();
         if (request == null) {
-            log.warn("No HTTP request found in context");
-            throw new PermissionDeniedException("No request context available");
+            log.warn("上下文中未找到 HTTP 请求");
+            throw new PermissionDeniedException("无可用请求上下文");
         }
 
         // 获取令牌自省信息
@@ -104,8 +104,8 @@ public class PermissionAspect {
                 .getAttribute(BeaconSsoFilter.ATTR_INTROSPECTION);
 
         if (introspection == null) {
-            log.warn("No authentication data found in request");
-            throw new PermissionDeniedException("Authentication required");
+            log.warn("请求中未找到认证数据");
+            throw new PermissionDeniedException("需要认证");
         }
 
         // 获取用户的权限列表
@@ -204,7 +204,7 @@ public class PermissionAspect {
             response.getWriter().write(responseBody);
             response.getWriter().flush();
         } catch (IOException e) {
-            log.error("Failed to write forbidden response", e);
+            log.error("写入禁止访问响应失败", e);
         }
     }
 

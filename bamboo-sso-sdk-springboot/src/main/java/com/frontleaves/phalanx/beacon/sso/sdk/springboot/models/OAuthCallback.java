@@ -1,4 +1,4 @@
-package com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto;
+package com.frontleaves.phalanx.beacon.sso.sdk.springboot.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * OAuth 回调响应 DTO
+ * OAuth 回调响应
  * <p>
  * 用于封装 OAuth 2.0 授权码回调成功后的响应数据。
  * </p>
@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OAuthCallbackResponseDTO {
+public class OAuthCallback {
 
     /**
      * 令牌类型，通常为 "Bearer"

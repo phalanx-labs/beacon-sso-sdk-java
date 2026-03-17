@@ -1,11 +1,12 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoHeaderConstants;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.UserLogic;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserByIDRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.Role;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.User;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto.UserInfoDTO;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto.UserRoleDTO;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.UserInfo;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.UserRole;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.utility.SsoSecurityUtil;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,7 +28,7 @@ import java.util.Optional;
 /**
  * 用户信息控制器
  * <p>
- * 提供获取当前登录用户信息的 HTTP 端点。
+ * 提供获取当前登录用户信息、根据 ID 获取用户信息的 HTTP 端点。
  * </p>
  *
  * @author xiao_lfeng
@@ -38,7 +40,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserLogic userLogic;
+    private final SsoRequest ssoRequest;
 
     /**
      * 获取当前用户信息
@@ -48,41 +50,83 @@ public class UserController {
      * @return 当前用户信息响应
      */
     @GetMapping("/userinfo")
-    public ResponseEntity<BaseResponse<UserInfoDTO>> getCurrentUser(
+    public ResponseEntity<BaseResponse<UserInfo>> getCurrentUser(
             @RequestHeader(value = SsoHeaderConstants.AUTHORIZATION, required = false) String authorization,
             HttpServletRequest request
     ) {
-        log.info("Processing current user request");
+        log.info("处理获取当前用户信息请求");
 
         Optional<String> tokenOpt = Optional.ofNullable(authorization).filter(StringUtils::hasText);
         if (tokenOpt.isEmpty()) {
             tokenOpt = SsoSecurityUtil.getCurrentToken(request);
         }
         if (tokenOpt.isEmpty()) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "Missing access token", null);
+            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少 Access Token", null);
         }
 
         try {
-            User user = userLogic.getCurrentUser(tokenOpt.get());
-            UserInfoDTO data = this.toUserInfo(user);
+            User user = ssoRequest.user().getCurrentUser(tokenOpt.get());
+            UserInfo data = this.toUserInfo(user);
             return ResultUtil.success("获取用户信息成功", data);
         } catch (Exception e) {
-            log.warn("Failed to fetch current user: {}", e.getMessage(), e);
+            log.warn("获取当前用户信息失败: {}", e.getMessage(), e);
             ErrorCode errorCode = this.mapExceptionToErrorCode(e);
             return ResultUtil.error(errorCode, e.getMessage(), null);
         }
     }
 
-    private UserInfoDTO toUserInfo(User user) {
+    /**
+     * 根据 ID 获取用户信息
+     *
+     * @param userId       用户 ID
+     * @param authorization Authorization 请求头
+     * @param request      HTTP 请求对象
+     * @return 用户信息响应
+     */
+    @GetMapping("/{userId}")
+    public ResponseEntity<BaseResponse<UserInfo>> getUserById(
+            @PathVariable String userId,
+            @RequestHeader(value = SsoHeaderConstants.AUTHORIZATION, required = false) String authorization,
+            HttpServletRequest request
+    ) {
+        log.info("Processing get user by ID request: {}", userId);
+
+        if (!StringUtils.hasText(userId)) {
+            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少用户 ID", null);
+        }
+
+        Optional<String> tokenOpt = Optional.ofNullable(authorization).filter(StringUtils::hasText);
+        if (tokenOpt.isEmpty()) {
+            tokenOpt = SsoSecurityUtil.getCurrentToken(request);
+        }
+        if (tokenOpt.isEmpty()) {
+            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少 Access Token", null);
+        }
+
+        try {
+            GetUserByIDRequest grpcRequest = GetUserByIDRequest.newBuilder()
+                    .setUserId(userId)
+                    .build();
+            User user = ssoRequest.user().getUserById(tokenOpt.get(), grpcRequest);
+            UserInfo data = this.toUserInfo(user);
+            return ResultUtil.success("获取用户信息成功", data);
+        } catch (Exception e) {
+            log.warn("按 ID 获取用户信息失败: {}", e.getMessage(), e);
+            ErrorCode errorCode = this.mapExceptionToErrorCode(e);
+            return ResultUtil.error(errorCode, e.getMessage(), null);
+        }
+    }
+
+    private UserInfo toUserInfo(User user) {
         if (user == null) {
             return null;
         }
 
-        List<UserRoleDTO> roles = user.getRolesList().stream()
+        List<UserRole> roles = user.getRolesList().stream()
                 .map(this::toUserRole)
                 .toList();
 
-        return UserInfoDTO.builder()
+        return UserInfo.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .nickname(user.getNickname())
@@ -101,11 +145,11 @@ public class UserController {
                 .build();
     }
 
-    private UserRoleDTO toUserRole(Role role) {
+    private UserRole toUserRole(Role role) {
         if (role == null) {
             return null;
         }
-        return UserRoleDTO.builder()
+        return UserRole.builder()
                 .code(role.getCode())
                 .name(role.getName())
                 .description(role.hasDescription() ? role.getDescription() : null)

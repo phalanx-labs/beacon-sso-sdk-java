@@ -86,8 +86,8 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
         String token = extractBearerToken(request);
 
         if (!StringUtils.hasText(token)) {
-            log.debug("No Bearer token found in request to {}", request.getRequestURI());
-            writeUnauthorizedResponse(response, "Missing or invalid Authorization header");
+            log.debug("请求 {} 中未找到 Bearer Token", request.getRequestURI());
+            writeUnauthorizedResponse(response, "缺少或无效的 Authorization 请求头");
             return;
         }
 
@@ -99,8 +99,8 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
 
             // 3. 检查令牌是否有效
             if (introspection == null || !introspection.isActive()) {
-                log.debug("Token is not active for request to {}", request.getRequestURI());
-                writeUnauthorizedResponse(response, "Token is invalid or expired");
+                log.debug("请求 {} 的令牌不活跃", request.getRequestURI());
+                writeUnauthorizedResponse(response, "令牌无效或已过期");
                 return;
             }
 
@@ -108,17 +108,17 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
             request.setAttribute(ATTR_INTROSPECTION, introspection);
             request.setAttribute(ATTR_ACCESS_TOKEN, token);
 
-            log.debug("Token validated successfully for user: {}", introspection.getSub());
+            log.debug("用户 {} 的令牌验证成功", introspection.getSub());
 
             // 5. 继续过滤链
             filterChain.doFilter(request, response);
 
         } catch (TokenException e) {
-            log.warn("Token validation failed: {}", e.getFormattedMessage());
+            log.warn("令牌验证失败: {}", e.getFormattedMessage());
             writeUnauthorizedResponse(response, e.getMessage());
         } catch (Exception e) {
-            log.error("Unexpected error during token validation", e);
-            writeUnauthorizedResponse(response, "Authentication failed");
+            log.error("令牌验证过程中发生意外错误", e);
+            writeUnauthorizedResponse(response, "认证失败");
         }
     }
 

@@ -140,7 +140,7 @@ public class OAuthStateException extends SsoException {
         StringBuilder sb = new StringBuilder();
         sb.append("[").append(getErrorCodeString()).append("] ").append(getMessage());
 
-        getState().ifPresent(s -> sb.append(" | State: ").append(s));
+        getState().ifPresent(s -> sb.append(" | 状态值: ").append(s));
 
         return sb.toString();
     }

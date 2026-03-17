@@ -7,6 +7,8 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.GrpcProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetCurrentUserRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetCurrentUserResponse;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserByIDRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserByIDResponse;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.User;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.UserServiceGrpc;
 import io.grpc.Metadata;
@@ -38,16 +40,16 @@ public class SsoGrpcUserClient {
 
     public SsoGrpcUserClient(UserServiceGrpc.UserServiceBlockingStub grpcUserServiceStub, GrpcProperties grpcProperties) {
         if (grpcUserServiceStub == null) {
-            throw new SsoConfigurationException("gRPC UserService stub is not configured");
+            throw new SsoConfigurationException("gRPC 用户服务 Stub 未配置");
         }
         if (grpcProperties == null) {
-            throw new SsoConfigurationException("gRPC properties are not configured");
+            throw new SsoConfigurationException("gRPC 配置未设置");
         }
         if (!StringUtils.hasText(grpcProperties.getAppAccessId())) {
-            throw new SsoConfigurationException("gRPC app access id is not configured");
+            throw new SsoConfigurationException("gRPC 应用访问 ID 未配置");
         }
         if (!StringUtils.hasText(grpcProperties.getAppSecretKey())) {
-            throw new SsoConfigurationException("gRPC app secret key is not configured");
+            throw new SsoConfigurationException("gRPC 应用密钥未配置");
         }
 
         userServiceStub = grpcUserServiceStub;
@@ -76,12 +78,45 @@ public class SsoGrpcUserClient {
         } catch (StatusRuntimeException ex) {
             throw TokenException.accessTokenError(
                     SsoErrorCode.TOKEN_INVALID,
-                    "gRPC user service call failed: " + ex.getStatus().getDescription()
+                    "gRPC 用户服务调用失败: " + ex.getStatus().getDescription()
             );
         }
 
         if (response == null || !response.hasUser()) {
-            throw TokenException.accessTokenError(SsoErrorCode.USERINFO_FAILED, "Userinfo response is empty");
+            throw TokenException.accessTokenError(SsoErrorCode.USERINFO_FAILED, "用户信息响应为空");
+        }
+
+        return response.getUser();
+    }
+
+    /**
+     * 根据 ID 获取用户信息
+     *
+     * @param accessToken 用户访问令牌
+     * @param request     查询请求（包含用户 ID）
+     * @return 用户信息
+     */
+    public User getUserById(String accessToken, GetUserByIDRequest request) {
+        String token = this.normalizeAccessToken(accessToken);
+        Metadata headers = new Metadata();
+        headers.put(APP_ACCESS_ID_KEY, appAccessId);
+        headers.put(APP_SECRET_KEY_KEY, appSecretKey);
+        headers.put(AUTHORIZATION_KEY, token);
+
+        UserServiceGrpc.UserServiceBlockingStub stub = userServiceStub
+                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers));
+        GetUserByIDResponse response;
+        try {
+            response = stub.getUserByID(request);
+        } catch (StatusRuntimeException ex) {
+            throw TokenException.accessTokenError(
+                    SsoErrorCode.TOKEN_INVALID,
+                    "gRPC 按 ID 获取用户调用失败: " + ex.getStatus().getDescription()
+            );
+        }
+
+        if (response == null || !response.hasUser()) {
+            throw TokenException.accessTokenError(SsoErrorCode.USERINFO_FAILED, "按 ID 获取用户响应为空");
         }
 
         return response.getUser();
@@ -89,7 +124,7 @@ public class SsoGrpcUserClient {
 
     private String normalizeAccessToken(String accessToken) {
         if (!StringUtils.hasText(accessToken)) {
-            throw TokenException.accessTokenError(SsoErrorCode.TOKEN_INVALID, "Access token cannot be empty");
+            throw TokenException.accessTokenError(SsoErrorCode.TOKEN_INVALID, "Access Token 不能为空");
         }
 
         String token = accessToken.trim();

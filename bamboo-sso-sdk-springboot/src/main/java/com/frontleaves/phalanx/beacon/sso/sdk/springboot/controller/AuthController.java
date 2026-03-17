@@ -5,9 +5,9 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthToken;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.OAuthTokenRepository;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.UserinfoRepository;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto.OAuthCallbackResponseDTO;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto.OAuthLogoutResponseDTO;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto.OAuthStatusResponseDTO;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.OAuthCallback;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.OAuthLogout;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.OAuthStatus;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
 import com.xlf.utility.mvc.ResultUtil;
@@ -73,11 +73,11 @@ public class AuthController {
      */
     @GetMapping("/login")
     public RedirectView login() {
-        log.info("Initiating OAuth login flow");
+        log.info("发起 OAuth 登录流程");
 
         String authorizationUrl = oAuthLogic.generateAuthorizationUrl().block();
 
-        log.debug("Redirecting to authorization URL: {}", authorizationUrl);
+        log.debug("重定向到授权 URL: {}", authorizationUrl);
         return new RedirectView(authorizationUrl);
     }
 
@@ -96,7 +96,7 @@ public class AuthController {
      * @return 包含令牌信息或错误的标准响应
      */
     @GetMapping("/callback")
-    public ResponseEntity<BaseResponse<OAuthCallbackResponseDTO>> callback(
+    public ResponseEntity<BaseResponse<OAuthCallback>> callback(
             @RequestParam(value = "code", required = false) String code,
             @RequestParam(value = "state", required = false) String state,
             @RequestParam(value = "error", required = false) String error,
@@ -113,8 +113,8 @@ public class AuthController {
 
         // 验证必要参数
         if (code == null || code.isEmpty()) {
-            log.warn("OAuth callback missing authorization code");
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "Missing authorization code", null);
+            log.warn("OAuth 回调缺少授权码");
+            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少授权码", null);
         }
 
         try {
@@ -132,7 +132,7 @@ public class AuthController {
                 log.info("OAuth authentication successful, token stored in session");
 
                 // 构建响应 DTO（不返回 refresh_token 给前端，避免安全风险）
-                OAuthCallbackResponseDTO data = OAuthCallbackResponseDTO.builder()
+                OAuthCallback data = OAuthCallback.builder()
                         .tokenType(token.getTokenType())
                         .expiresIn(token.getExpiresIn())
                         .scope(token.getScope())
@@ -141,7 +141,7 @@ public class AuthController {
                 return ResultUtil.success("OAuth 认证成功", data);
             } else {
                 log.error("OAuth token exchange returned null");
-                return ResultUtil.error(ErrorCode.OPERATION_FAILED, "Failed to exchange authorization code for token", null);
+                return ResultUtil.error(ErrorCode.OPERATION_FAILED, "授权码交换令牌失败", null);
             }
         } catch (Exception e) {
             log.error("OAuth callback processing failed: {}", e.getMessage(), e);
@@ -161,7 +161,7 @@ public class AuthController {
      * @return 登出结果响应
      */
     @GetMapping("/logout")
-    public ResponseEntity<BaseResponse<OAuthLogoutResponseDTO>> logout(HttpSession session) {
+    public ResponseEntity<BaseResponse<OAuthLogout>> logout(HttpSession session) {
         log.info("Processing logout request");
 
         // 从 Session 获取 Token
@@ -199,7 +199,7 @@ public class AuthController {
 
         log.info("Logout completed, token revoked: {}", revoked);
 
-        OAuthLogoutResponseDTO data = OAuthLogoutResponseDTO.of(revoked);
+        OAuthLogout data = OAuthLogout.of(revoked);
         return ResultUtil.success("登出成功", data);
     }
 
@@ -213,7 +213,7 @@ public class AuthController {
      * @return 认证状态响应
      */
     @GetMapping("/status")
-    public ResponseEntity<BaseResponse<OAuthStatusResponseDTO>> status(HttpSession session) {
+    public ResponseEntity<BaseResponse<OAuthStatus>> status(HttpSession session) {
         log.debug("Checking authentication status");
 
         // 从 Session 获取 Token
@@ -232,11 +232,11 @@ public class AuthController {
 
             if (!isExpired) {
                 // 尝试获取用户信息
-                OAuthStatusResponseDTO.UserInfo userInfo = null;
+                OAuthStatus.UserInfo userInfo = null;
                 Optional<OAuthUserinfo> userinfoOpt = userinfoRepository.findByAccessToken(token.getAccessToken());
                 if (userinfoOpt.isPresent()) {
                     OAuthUserinfo userinfo = userinfoOpt.get();
-                    userInfo = OAuthStatusResponseDTO.UserInfo.builder()
+                    userInfo = OAuthStatus.UserInfo.builder()
                             .sub(userinfo.getSub())
                             .name(userinfo.getName())
                             .preferredUsername(userinfo.getPreferredUsername())
@@ -245,7 +245,7 @@ public class AuthController {
                             .build();
                 }
 
-                OAuthStatusResponseDTO data = OAuthStatusResponseDTO.authenticated(
+                OAuthStatus data = OAuthStatus.authenticated(
                         token.getTokenType(),
                         calculateRemainingExpiresIn(token),
                         userInfo
@@ -261,7 +261,7 @@ public class AuthController {
             }
         }
 
-        OAuthStatusResponseDTO data = OAuthStatusResponseDTO.notAuthenticated("未认证或令牌已过期");
+        OAuthStatus data = OAuthStatus.notAuthenticated("未认证或令牌已过期");
         log.debug("User is not authenticated");
         return ResultUtil.success("获取认证状态成功", data);
     }

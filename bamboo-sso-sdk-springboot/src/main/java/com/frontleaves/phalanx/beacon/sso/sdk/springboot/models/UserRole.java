@@ -1,4 +1,4 @@
-package com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto;
+package com.frontleaves.phalanx.beacon.sso.sdk.springboot.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 邮箱注册请求 DTO
+ * 用户角色
  *
  * @author xiao_lfeng
  * @since 0.0.1
@@ -17,30 +17,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RegisterByEmailRequestDTO {
+public class UserRole {
 
     /**
-     * 邮箱地址
-     */
-    private String email;
-
-    /**
-     * 验证码
+     * 角色代码
      */
     private String code;
 
     /**
-     * 用户名
+     * 角色名称
      */
-    private String username;
+    private String name;
 
     /**
-     * 密码
+     * 角色描述
      */
-    private String password;
-
-    /**
-     * 昵称
-     */
-    private String nickname;
+    private String description;
 }

@@ -50,7 +50,7 @@ public final class OAuthUrlBuilder {
      * 私有构造函数，防止实例化
      */
     private OAuthUrlBuilder() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+        throw new UnsupportedOperationException("工具类不能被实例化");
     }
 
     /**
@@ -200,7 +200,7 @@ public final class OAuthUrlBuilder {
      */
     private static void validateRequiredParameter(String parameter, String name) {
         if (parameter == null || parameter.isEmpty()) {
-            throw new IllegalArgumentException(name + " cannot be null or empty");
+            throw new IllegalArgumentException(name + " 不能为空");
         }
     }
 

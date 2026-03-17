@@ -1,6 +1,7 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.logic;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.grpc.SsoGrpcUserClient;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserByIDRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.User;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,5 +32,17 @@ public class UserLogic {
     public User getCurrentUser(String accessToken) {
         log.info("GetCurrentUser - 获取当前用户信息");
         return ssoGrpcUserClient.getCurrentUser(accessToken);
+    }
+
+    /**
+     * 根据 ID 获取用户信息
+     *
+     * @param accessToken 用户访问令牌
+     * @param request     查询请求（包含用户 ID）
+     * @return 用户信息
+     */
+    public User getUserById(String accessToken, GetUserByIDRequest request) {
+        log.info("GetUserByID - 根据ID获取用户信息");
+        return ssoGrpcUserClient.getUserById(accessToken, request);
     }
 }

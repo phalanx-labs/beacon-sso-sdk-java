@@ -14,47 +14,47 @@ public enum SsoErrorCode {
     /**
      * 无效或过期的 OAuth state 参数
      */
-    INVALID_STATE("invalid_state", "Invalid or expired OAuth state"),
+    INVALID_STATE("invalid_state", "无效或过期的 OAuth state"),
 
     /**
      * 无效的授权码
      */
-    INVALID_CODE("invalid_code", "Invalid authorization code"),
+    INVALID_CODE("invalid_code", "无效的授权码"),
 
     /**
      * Access Token 已过期
      */
-    TOKEN_EXPIRED("token_expired", "Access token has expired"),
+    TOKEN_EXPIRED("token_expired", "Access Token 已过期"),
 
     /**
      * Access Token 无效
      */
-    TOKEN_INVALID("token_invalid", "Access token is invalid"),
+    TOKEN_INVALID("token_invalid", "Access Token 无效"),
 
     /**
      * 获取用户信息失败
      */
-    USERINFO_FAILED("userinfo_failed", "Failed to fetch user info"),
+    USERINFO_FAILED("userinfo_failed", "获取用户信息失败"),
 
     /**
      * Token 内省失败
      */
-    INTROSPECTION_FAILED("introspection_failed", "Token introspection failed"),
+    INTROSPECTION_FAILED("introspection_failed", "Token 内省失败"),
 
     /**
      * PKCE 生成或验证失败
      */
-    PKCE_ERROR("pkce_error", "PKCE generation or verification failed"),
+    PKCE_ERROR("pkce_error", "PKCE 生成或验证失败"),
 
     /**
      * 网络请求失败
      */
-    NETWORK_ERROR("network_error", "Network request failed"),
+    NETWORK_ERROR("network_error", "网络请求失败"),
 
     /**
      * SSO 配置无效
      */
-    CONFIGURATION_ERROR("configuration_error", "SSO configuration is invalid");
+    CONFIGURATION_ERROR("configuration_error", "SSO 配置无效");
 
     /**
      * 错误码

@@ -68,5 +68,5 @@ public @interface PermissionVerify {
      *
      * @return 提示消息，默认为 "Permission denied"
      */
-    String message() default "Permission denied";
+    String message() default "权限不足";
 }

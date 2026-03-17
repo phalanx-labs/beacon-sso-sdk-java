@@ -90,7 +90,7 @@ public class OAuthLogic {
                     .build();
 
             stateRepository.save(state, oauthState);
-            log.debug("Generated OAuth state: {}", maskState(state));
+            log.debug("已生成 OAuth state: {}", maskState(state));
 
             // 构建授权 URL
             return UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
@@ -137,7 +137,7 @@ public class OAuthLogic {
                     .build();
 
             stateRepository.save(state, oauthState);
-            log.debug("Generated OAuth state: {}", maskState(state));
+            log.debug("已生成 OAuth state: {}", maskState(state));
 
             // 构建授权 URL
             return UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
@@ -173,13 +173,13 @@ public class OAuthLogic {
             if (!StringUtils.hasText(code)) {
                 return Mono.error(new TokenException(
                         SsoErrorCode.INVALID_CODE,
-                        "Authorization code cannot be null or empty"
+                        "授权码不能为空"
                 ));
             }
             if (!StringUtils.hasText(state)) {
                 return Mono.error(new OAuthStateException(
                         SsoErrorCode.INVALID_STATE,
-                        "State parameter cannot be null or empty"
+                        "State 参数不能为空"
                 ));
             }
 
@@ -187,14 +187,14 @@ public class OAuthLogic {
             return Mono.justOrEmpty(stateRepository.findByState(state))
                     .switchIfEmpty(Mono.error(new OAuthStateException(
                             state,
-                            "OAuth state not found in repository"
+                            "在存储库中未找到 OAuth state"
                     )))
                     .flatMap(oauthState -> {
                         // 检查 state 是否匹配
                         if (!state.equals(oauthState.getState())) {
                             return Mono.error(new OAuthStateException(
                                     state,
-                                    "State parameter mismatch"
+                                    "State 参数不匹配"
                             ));
                         }
 
@@ -203,7 +203,7 @@ public class OAuthLogic {
                             stateRepository.delete(state);
                             return Mono.error(new OAuthStateException(
                                     state,
-                                    "OAuth state has expired"
+                                    "OAuth state 已过期"
                             ));
                         }
 
@@ -212,12 +212,12 @@ public class OAuthLogic {
                                 .doOnSuccess(token -> {
                                     // 成功后删除已使用的 state
                                     stateRepository.delete(state);
-                                    log.debug("OAuth state consumed and deleted: {}", maskState(state));
+                                    log.debug("OAuth state 已使用并删除: {}", maskState(state));
                                 })
                                 .doOnError(error -> {
                                     // 发生错误时也删除 state
                                     stateRepository.delete(state);
-                                    log.warn("OAuth token exchange failed, state deleted: {}", maskState(state));
+                                    log.warn("OAuth 令牌交换失败，state 已删除: {}", maskState(state));
                                 });
                     });
         });
@@ -238,7 +238,7 @@ public class OAuthLogic {
             if (!StringUtils.hasText(refreshToken)) {
                 return Mono.error(new TokenException(
                         TokenException.TOKEN_TYPE_REFRESH,
-                        "Refresh token cannot be null or empty"
+                        "刷新令牌不能为空"
                 ));
             }
 
@@ -258,7 +258,7 @@ public class OAuthLogic {
                     .build()
                     .toUriString();
 
-            log.debug("Refreshing token at: {}", tokenUrl);
+            log.debug("正在刷新令牌: {}", tokenUrl);
 
             // 发送令牌刷新请求
             return webClient
@@ -274,13 +274,13 @@ public class OAuthLogic {
                         return token;
                     })
                     .onErrorMap(error -> {
-                        log.error("Failed to refresh token: {}", error.getMessage());
+                        log.error("刷新令牌失败: {}", error.getMessage());
                         if (error instanceof TokenException) {
                             return error;
                         }
                         return new TokenException(
                                 SsoErrorCode.TOKEN_INVALID,
-                                "Failed to refresh token: " + error.getMessage(),
+                                "刷新令牌失败: " + error.getMessage(),
                                 error,
                                 TokenException.TOKEN_TYPE_REFRESH
                         );
@@ -314,7 +314,7 @@ public class OAuthLogic {
     public Mono<Boolean> revokeToken(String token, String tokenType) {
         return Mono.defer(() -> {
             if (!StringUtils.hasText(token)) {
-                log.warn("Token to revoke is null or empty");
+                log.warn("待撤销的令牌为空");
                 return Mono.just(false);
             }
 
@@ -334,7 +334,7 @@ public class OAuthLogic {
                     .build()
                     .toUriString();
 
-            log.debug("Revoking token at: {}", revokeUrl);
+            log.debug("正在撤销令牌: {}", revokeUrl);
 
             // 发送令牌撤销请求
             return webClient
@@ -345,11 +345,11 @@ public class OAuthLogic {
                     .retrieve()
                     .bodyToMono(String.class)
                     .map(response -> {
-                        log.debug("Token revoked successfully");
+                        log.debug("令牌撤销成功");
                         return true;
                     })
                     .onErrorResume(error -> {
-                        log.warn("Failed to revoke token: {}", error.getMessage());
+                        log.warn("撤销令牌失败: {}", error.getMessage());
                         return Mono.just(false);
                     });
         });
@@ -384,7 +384,7 @@ public class OAuthLogic {
                 .build()
                 .toUriString();
 
-        log.debug("Exchanging authorization code for token at: {}", tokenUrl);
+        log.debug("正在用授权码交换令牌: {}", tokenUrl);
 
         // 发送令牌请求
         return webClient
@@ -400,13 +400,13 @@ public class OAuthLogic {
                     return token;
                 })
                 .onErrorMap(error -> {
-                    log.error("Failed to exchange authorization code: {}", error.getMessage());
+                    log.error("授权码交换失败: {}", error.getMessage());
                     if (error instanceof TokenException) {
                         return error;
                     }
                     return new TokenException(
                             SsoErrorCode.INVALID_CODE,
-                            "Failed to exchange authorization code: " + error.getMessage(),
+                            "授权码交换失败: " + error.getMessage(),
                             error,
                             TokenException.TOKEN_TYPE_AUTHORIZATION_CODE
                     );
@@ -434,13 +434,13 @@ public class OAuthLogic {
      */
     private void validateConfiguration() {
         if (!StringUtils.hasText(properties.getBaseUrl())) {
-            throw new SsoConfigurationException("SSO base URL is not configured");
+            throw new SsoConfigurationException("SSO 基础 URL 未配置");
         }
         if (!StringUtils.hasText(properties.getClientId())) {
-            throw new SsoConfigurationException("SSO client ID is not configured");
+            throw new SsoConfigurationException("SSO 客户端 ID 未配置");
         }
         if (!StringUtils.hasText(properties.getRedirectUri())) {
-            throw new SsoConfigurationException("SSO redirect URI is not configured");
+            throw new SsoConfigurationException("SSO 回调地址未配置");
         }
     }
 

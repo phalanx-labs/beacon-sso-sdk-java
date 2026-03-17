@@ -1,4 +1,4 @@
-package com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto;
+package com.frontleaves.phalanx.beacon.sso.sdk.springboot.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * OAuth 认证状态响应 DTO
+ * OAuth 认证状态响应
  * <p>
  * 用于封装当前用户的 OAuth 认证状态查询结果。
  * </p>
@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OAuthStatusResponseDTO {
+public class OAuthStatus {
 
     /**
      * 是否已认证
@@ -94,10 +94,10 @@ public class OAuthStatusResponseDTO {
      * @param tokenType 令牌类型
      * @param expiresIn 剩余过期时间
      * @param user      用户信息
-     * @return OAuthStatusResponseDTO
+     * @return OAuthStatus
      */
-    public static OAuthStatusResponseDTO authenticated(String tokenType, Long expiresIn, UserInfo user) {
-        return OAuthStatusResponseDTO.builder()
+    public static OAuthStatus authenticated(String tokenType, Long expiresIn, UserInfo user) {
+        return OAuthStatus.builder()
                 .authenticated(true)
                 .tokenType(tokenType)
                 .expiresIn(expiresIn)
@@ -109,10 +109,10 @@ public class OAuthStatusResponseDTO {
      * 创建未认证状态响应
      *
      * @param message 状态消息
-     * @return OAuthStatusResponseDTO
+     * @return OAuthStatus
      */
-    public static OAuthStatusResponseDTO notAuthenticated(String message) {
-        return OAuthStatusResponseDTO.builder()
+    public static OAuthStatus notAuthenticated(String message) {
+        return OAuthStatus.builder()
                 .authenticated(false)
                 .message(message)
                 .build();

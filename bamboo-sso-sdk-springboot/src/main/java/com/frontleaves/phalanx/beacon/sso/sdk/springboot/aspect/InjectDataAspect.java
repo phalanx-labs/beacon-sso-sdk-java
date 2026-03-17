@@ -107,7 +107,7 @@ public class InjectDataAspect {
         // 如果没有自省信息
         if (introspection == null) {
             if (annotation.required()) {
-                throw new IllegalStateException("No authentication data found in request");
+                throw new IllegalStateException("请求中未找到认证数据");
             }
             return null;
         }
@@ -121,7 +121,7 @@ public class InjectDataAspect {
             }
             if (annotation.required()) {
                 throw new IllegalArgumentException(
-                        "Parameter type must be OAuthIntrospection when no field specified");
+                        "未指定字段时参数类型必须为 OAuthIntrospection");
             }
             return null;
         }
@@ -131,7 +131,7 @@ public class InjectDataAspect {
 
         if (value == null && annotation.required()) {
             throw new IllegalArgumentException(
-                    "Required field '" + fieldName + "' not found in authentication data");
+                    "在认证数据中未找到必要字段 '" + fieldName + "'");
         }
 
         // 类型转换检查
@@ -165,7 +165,7 @@ public class InjectDataAspect {
             case "aud" -> introspection.getAud();
             case "active" -> introspection.isActive();
             default -> {
-                log.warn("Unknown field name '{}' for injection", fieldName);
+                log.warn("未知的注入字段名 '{}'", fieldName);
                 yield null;
             }
         };
@@ -204,7 +204,7 @@ public class InjectDataAspect {
             try {
                 return Long.parseLong(value.toString());
             } catch (NumberFormatException e) {
-                log.warn("Cannot convert '{}' to Long", value);
+                log.warn("无法将 '{}' 转换为 Long", value);
                 return null;
             }
         }
@@ -220,7 +220,7 @@ public class InjectDataAspect {
             }
         }
 
-        log.warn("Cannot convert '{}' to target type '{}'", value, targetType.getName());
+        log.warn("无法将 '{}' 转换为目标类型 '{}'", value, targetType.getName());
         return value;
     }
 

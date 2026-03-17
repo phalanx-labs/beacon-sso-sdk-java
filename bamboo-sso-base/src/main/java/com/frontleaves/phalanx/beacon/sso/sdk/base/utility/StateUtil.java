@@ -48,7 +48,7 @@ public final class StateUtil {
      * 私有构造函数，防止实例化
      */
     private StateUtil() {
-        throw new UnsupportedOperationException("Utility class cannot be instantiated");
+        throw new UnsupportedOperationException("工具类不能被实例化");
     }
 
     /**
@@ -199,7 +199,7 @@ public final class StateUtil {
          * @param actualState   实际的 state (已遮蔽)
          */
         public StateValidationException(String expectedState, String actualState) {
-            super(String.format("State validation failed: expected [%s], but got [%s]",
+            super(String.format("State 验证失败: 期望 [%s]，实际为 [%s]",
                     expectedState, actualState));
             this.expectedState = expectedState;
             this.actualState = actualState;

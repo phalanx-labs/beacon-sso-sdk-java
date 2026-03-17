@@ -138,7 +138,7 @@ public class SsoConfigurationException extends SsoException {
     public static SsoConfigurationException missing(String configKey) {
         return new SsoConfigurationException(
                 SsoErrorCode.CONFIGURATION_ERROR,
-                String.format("Missing required configuration: %s", configKey),
+                String.format("缺少必要配置: %s", configKey),
                 configKey
         );
     }
@@ -153,7 +153,7 @@ public class SsoConfigurationException extends SsoException {
     public static SsoConfigurationException invalid(String configKey, String reason) {
         return new SsoConfigurationException(
                 SsoErrorCode.CONFIGURATION_ERROR,
-                String.format("Invalid configuration '%s': %s", configKey, reason),
+                String.format("无效配置 '%s': %s", configKey, reason),
                 configKey
         );
     }
@@ -169,7 +169,7 @@ public class SsoConfigurationException extends SsoException {
         sb.append("[").append(getErrorCodeString()).append("] ").append(getMessage());
 
         if (configKey != null) {
-            sb.append(" | ConfigKey: ").append(configKey);
+            sb.append(" | 配置项: ").append(configKey);
         }
 
         return sb.toString();

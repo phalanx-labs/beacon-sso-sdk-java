@@ -7,6 +7,8 @@ import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.PasswordLoginRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.PasswordLoginResponse;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RegisterByEmailRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RegisterByEmailResponse;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RevokeTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RevokeTokenResponse;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -40,5 +42,17 @@ public class AuthLogic {
     public ChangePasswordResponse changePassword(ChangePasswordRequest request) {
         log.info("ChangePassword - 处理修改密码请求");
         return ssoGrpcAuthClient.changePassword(request);
+    }
+
+    /**
+     * 注销用户 Token（登出）
+     *
+     * @param accessToken 用户访问令牌
+     * @param request     注销请求
+     * @return 注销响应
+     */
+    public RevokeTokenResponse revokeToken(String accessToken, RevokeTokenRequest request) {
+        log.info("RevokeToken - 处理注销令牌请求");
+        return ssoGrpcAuthClient.revokeToken(accessToken, request);
     }
 }

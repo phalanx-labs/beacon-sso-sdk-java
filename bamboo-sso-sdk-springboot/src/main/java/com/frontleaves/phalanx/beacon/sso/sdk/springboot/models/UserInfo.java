@@ -1,4 +1,4 @@
-package com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto;
+package com.frontleaves.phalanx.beacon.sso.sdk.springboot.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 当前用户信息 DTO
+ * 当前用户信息
  *
  * @author xiao_lfeng
  * @since 0.0.1
@@ -19,7 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserInfoDTO {
+public class UserInfo {
 
     /**
      * 用户 ID
@@ -94,5 +94,5 @@ public class UserInfoDTO {
     /**
      * 用户角色列表
      */
-    private List<UserRoleDTO> roles;
+    private List<UserRole> roles;
 }

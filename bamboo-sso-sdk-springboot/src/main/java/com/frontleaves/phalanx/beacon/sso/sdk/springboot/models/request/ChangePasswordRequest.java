@@ -1,4 +1,4 @@
-package com.frontleaves.phalanx.beacon.sso.sdk.springboot.dto;
+package com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 用户角色 DTO
+ * 修改密码请求
  *
  * @author xiao_lfeng
  * @since 0.0.1
@@ -17,20 +17,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserRoleDTO {
+public class ChangePasswordRequest {
 
     /**
-     * 角色代码
+     * 用户 ID
      */
-    private String code;
+    private String userId;
 
     /**
-     * 角色名称
+     * 旧密码（可选）
      */
-    private String name;
+    private String oldPassword;
 
     /**
-     * 角色描述
+     * 新密码
      */
-    private String description;
+    private String newPassword;
 }

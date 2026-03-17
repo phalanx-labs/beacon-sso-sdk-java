@@ -40,6 +40,6 @@ public final class SsoHeaderConstants {
      * 私有构造函数，防止实例化
      */
     private SsoHeaderConstants() {
-        throw new UnsupportedOperationException("Constants class cannot be instantiated");
+        throw new UnsupportedOperationException("常量类不能被实例化");
     }
 }

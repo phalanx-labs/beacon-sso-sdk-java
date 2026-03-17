@@ -61,10 +61,10 @@ public class BusinessLogic {
      */
     private void validateConfiguration() {
         if (!StringUtils.hasText(properties.getBaseUrl())) {
-            throw new SsoConfigurationException("SSO base URL is not configured");
+            throw new SsoConfigurationException("SSO 基础 URL 未配置");
         }
         if (!StringUtils.hasText(properties.getClientId())) {
-            throw new SsoConfigurationException("SSO client ID is not configured");
+            throw new SsoConfigurationException("SSO 客户端 ID 未配置");
         }
     }
 
@@ -84,7 +84,7 @@ public class BusinessLogic {
             if (!StringUtils.hasText(accessToken)) {
                 return Mono.error(new TokenException(
                         TokenException.TOKEN_TYPE_ACCESS,
-                        "Access token cannot be null or empty"
+                        "Access Token 不能为空"
                 ));
             }
 
@@ -94,7 +94,7 @@ public class BusinessLogic {
                     .build()
                     .toUriString();
 
-            log.debug("Fetching userinfo from: {}", userinfoUrl);
+            log.debug("正在从以下地址获取用户信息: {}", userinfoUrl);
 
             // 发送用户信息请求
             return userinfoWebClient
@@ -105,13 +105,13 @@ public class BusinessLogic {
                     .retrieve()
                     .bodyToMono(OAuthUserinfo.class)
                     .onErrorMap(error -> {
-                        log.error("Failed to fetch userinfo: {}", error.getMessage());
+                        log.error("获取用户信息失败: {}", error.getMessage());
                         if (error instanceof TokenException) {
                             return error;
                         }
                         return new TokenException(
                                 SsoErrorCode.USERINFO_FAILED,
-                                "Failed to fetch userinfo: " + error.getMessage(),
+                                "获取用户信息失败: " + error.getMessage(),
                                 error,
                                 TokenException.TOKEN_TYPE_ACCESS
                         );
@@ -149,7 +149,7 @@ public class BusinessLogic {
             // 验证参数
             if (!StringUtils.hasText(token)) {
                 return Mono.error(new TokenException(
-                        "Token cannot be null or empty for introspection"
+                        "用于内省的令牌不能为空"
                 ));
             }
 
@@ -169,7 +169,7 @@ public class BusinessLogic {
                     .build()
                     .toUriString();
 
-            log.debug("Introspecting token at: {}", introspectUrl);
+            log.debug("正在内省令牌: {}", introspectUrl);
 
             // 发送令牌自省请求
             return oauthWebClient
@@ -181,13 +181,13 @@ public class BusinessLogic {
                     .retrieve()
                     .bodyToMono(OAuthIntrospection.class)
                     .onErrorMap(error -> {
-                        log.error("Failed to introspect token: {}", error.getMessage());
+                        log.error("内省令牌失败: {}", error.getMessage());
                         if (error instanceof TokenException tokenException) {
                             return tokenException;
                         }
                         return new TokenException(
                                 SsoErrorCode.INTROSPECTION_FAILED,
-                                "Failed to introspect token: " + error.getMessage(),
+                                "内省令牌失败: " + error.getMessage(),
                                 error,
                                 null
                         );
@@ -222,7 +222,7 @@ public class BusinessLogic {
         return this.introspectToken(token, tokenType)
                 .map(OAuthIntrospection::isActive)
                 .onErrorResume(error -> {
-                    log.warn("Token validation failed: {}", error.getMessage());
+                    log.warn("令牌验证失败: {}", error.getMessage());
                     return Mono.just(false);
                 });
     }
@@ -240,7 +240,7 @@ public class BusinessLogic {
         return this.introspectToken(token)
                 .filter(OAuthIntrospection::isActive)
                 .onErrorResume(error -> {
-                    log.debug("Token validation returned empty: {}", error.getMessage());
+                    log.debug("令牌验证返回为空: {}", error.getMessage());
                     return Mono.empty();
                 });
     }
@@ -269,7 +269,7 @@ public class BusinessLogic {
                     return remainingSeconds <= thresholdSeconds;
                 })
                 .onErrorResume(error -> {
-                    log.warn("Failed to check token expiration: {}", error.getMessage());
+                    log.warn("检查令牌过期时间失败: {}", error.getMessage());
                     return Mono.just(true);
                 });
     }
@@ -294,7 +294,7 @@ public class BusinessLogic {
                     return Math.max(0L, remainingSeconds);
                 })
                 .onErrorResume(error -> {
-                    log.warn("Failed to get token remaining time: {}", error.getMessage());
+                    log.warn("获取令牌剩余时间失败: {}", error.getMessage());
                     return Mono.just(0L);
                 });
     }

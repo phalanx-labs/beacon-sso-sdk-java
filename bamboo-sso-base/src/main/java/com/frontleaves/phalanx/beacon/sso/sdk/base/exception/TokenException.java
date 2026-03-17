@@ -208,7 +208,7 @@ public class TokenException extends SsoException {
         StringBuilder sb = new StringBuilder();
         sb.append("[").append(getErrorCodeString()).append("] ").append(getMessage());
 
-        getTokenType().ifPresent(type -> sb.append(" | TokenType: ").append(type));
+        getTokenType().ifPresent(type -> sb.append(" | 令牌类型: ").append(type));
 
         return sb.toString();
     }

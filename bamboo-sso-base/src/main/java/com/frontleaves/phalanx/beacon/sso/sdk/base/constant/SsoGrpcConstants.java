@@ -32,6 +32,6 @@ public final class SsoGrpcConstants {
     public static final String BEARER_PREFIX = "Bearer ";
 
     private SsoGrpcConstants() {
-        throw new UnsupportedOperationException("Constants class cannot be instantiated");
+        throw new UnsupportedOperationException("常量类不能被实例化");
     }
 }
