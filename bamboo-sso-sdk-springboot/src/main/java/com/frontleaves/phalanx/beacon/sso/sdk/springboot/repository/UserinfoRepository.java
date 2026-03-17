@@ -1,4 +1,4 @@
-package com.frontleaves.phalanx.beacon.sso.sdk.base.repository;
+package com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
 

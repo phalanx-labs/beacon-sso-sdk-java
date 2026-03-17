@@ -1,13 +1,8 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.config.BeaconSsoAutoConfiguration;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.OAuthLogic;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.BusinessLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.OAuthTokenRepository;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.UserinfoRepository;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.InjectDataAspect;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.PermissionAspect;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.AccountController;
@@ -16,6 +11,14 @@ import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.MerchantCont
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.PublicController;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.UserController;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.AuthLogic;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthStateRepository;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthTokenRepository;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.UserinfoRepository;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.impl.OAuthStateRepositoryImpl;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.impl.OAuthTokenRepositoryImpl;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.impl.UserinfoRepositoryImpl;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -28,16 +31,17 @@ import org.springframework.context.annotation.Import;
 /**
  * Beacon SSO Spring Boot 自动配置类
  * <p>
- * 为 Servlet 类型的 Web 应用提供自动配置，自动注册 SSO 相关的 Filter、Controller 和 API Bean。
+ * 为 Servlet 类型的 Web 应用提供自动配置，自动注册 SSO 相关的
+ * Repository、Logic、Filter、Controller 和 API Bean。
  * </p>
  * <p>
-    配置生效条件：
-    <ul>
-    *   <li>应用为 Servlet 类型的 Web 应用</li>
-    *   <li>配置项 {@code beacon.sso.enabled} 为 {@code true} 时启用</li>
-    *   <li>若未配置该属性，默认启用（matchIfMissing = true）</li>
- * * </ul>
- * * </p>
+ * 配置生效条件：
+ * <ul>
+ *   <li>应用为 Servlet 类型的 Web 应用</li>
+ *   <li>配置项 {@code beacon.sso.enabled} 为 {@code true} 时启用</li>
+ *   <li>若未配置该属性，默认启用（matchIfMissing = true）</li>
+ * </ul>
+ * </p>
  *
  * @author xiao_lfeng
  * @since 0.0.1
@@ -46,15 +50,87 @@ import org.springframework.context.annotation.Import;
 @EnableAspectJAutoProxy
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(prefix = "beacon.sso", name = "enabled", havingValue = "true", matchIfMissing = true)
-@Import(BeaconSsoAutoConfiguration.class)
+@Import({
+        BeaconSsoCacheConfiguration.class,
+        com.frontleaves.phalanx.beacon.sso.sdk.base.config.BeaconSsoAutoConfiguration.class
+})
 public class BeaconSsoSpringBootAutoConfiguration {
+
+    // ==================== Repository ====================
+
+    /**
+     * 注册 OAuthStateRepository Bean
+     *
+     * @return OAuthStateRepository 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public OAuthStateRepository oauthStateRepository() {
+        return new OAuthStateRepositoryImpl();
+    }
+
+    /**
+     * 注册 OAuthTokenRepository Bean
+     *
+     * @return OAuthTokenRepository 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public OAuthTokenRepository oauthTokenRepository() {
+        return new OAuthTokenRepositoryImpl();
+    }
+
+    /**
+     * 注册 UserinfoRepository Bean
+     *
+     * @return UserinfoRepository 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public UserinfoRepository userinfoRepository() {
+        return new UserinfoRepositoryImpl();
+    }
+
+    // ==================== Logic ====================
+
+    /**
+     * 注册 AuthLogic Bean
+     *
+     * @param properties      SSO 配置属性
+     * @param authApi         HTTP OAuth 客户端
+     * @param stateRepository OAuth State 存储库
+     * @param tokenRepository OAuth Token 存储库
+     * @return AuthLogic 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AuthLogic authLogic(BeaconSsoProperties properties,
+                               com.frontleaves.phalanx.beacon.sso.sdk.base.client.AuthApi authApi,
+                               OAuthStateRepository stateRepository,
+                               OAuthTokenRepository tokenRepository) {
+        return new AuthLogic(properties, authApi, stateRepository, tokenRepository);
+    }
+
+    /**
+     * 注册 UserLogic Bean
+     *
+     * @param userApi         HTTP User 客户端
+     * @param userinfoClient  用户信息客户端（SPI）
+     * @param userinfoRepository 用户信息缓存
+     * @return UserLogic 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public UserLogic userLogic(com.frontleaves.phalanx.beacon.sso.sdk.base.client.UserApi userApi,
+                               com.frontleaves.phalanx.beacon.sso.sdk.base.client.UserinfoClient userinfoClient,
+                               UserinfoRepository userinfoRepository) {
+        return new UserLogic(userApi, userinfoClient, userinfoRepository);
+    }
+
+    // ==================== Aspect ====================
 
     /**
      * 注册 InjectDataAspect Bean
-     * <p>
-     * 处理带有 {@code @InjectData} 注解的方法参数，
-     * 从请求属性中获取 OAuthIntrospection 并注入相应字段值。
-     * </p>
      *
      * @return InjectDataAspect 实例
      */
@@ -66,10 +142,6 @@ public class BeaconSsoSpringBootAutoConfiguration {
 
     /**
      * 注册 PermissionAspect Bean
-     * <p>
-     * 拦截带有 {@code @PermissionVerify} 注解的方法，
-     * 验证用户是否具有所需的 OAuth scope 权限。
-     * </p>
      *
      * @param objectMapper JSON 序列化工具
      * @return PermissionAspect 实例
@@ -80,51 +152,49 @@ public class BeaconSsoSpringBootAutoConfiguration {
         return new PermissionAspect(objectMapper);
     }
 
+    // ==================== Filter ====================
+
     /**
      * 创建 BeaconSsoFilter Bean
-     * <p>
-     * 用于拦截请求并验证 SSO 令牌的过滤器。
-     * 如果用户已经定义了自己的 BeaconSsoFilter Bean,则不创建。
-     * </p>
      *
-     * @param businessLogic 业务逻辑处理类
-     * @param properties    SSO 配置属性
+     * @param userLogic  用户业务逻辑处理类
+     * @param properties SSO 配置属性
      * @return BeaconSsoFilter 实例
      */
     @Bean
     @ConditionalOnMissingBean
     public BeaconSsoFilter beaconSsoFilter(
-            BusinessLogic businessLogic,
+            UserLogic userLogic,
             BeaconSsoProperties properties
     ) {
-        return new BeaconSsoFilter(businessLogic, properties);
+        return new BeaconSsoFilter(userLogic, properties);
     }
+
+    // ==================== Controller ====================
+
     /**
      * 创建 AuthController Bean
-     * <p>
-     * 提供 SSO 认证相关的 REST API 端点。
-     * 如果用户已经定义了自己的 AuthController Bean,则不创建。
-     * </p>
      *
-     * @param oAuthLogic         OAuth 逻辑处理类
-     * @param tokenRepository    令牌存储库
+     * @param authLogic         认证逻辑处理类
+     * @param userLogic         用户业务逻辑处理类
+     * @param tokenRepository   令牌存储库
      * @param userinfoRepository 用户信息存储库
      * @return AuthController 实例
      */
     @Bean
     @ConditionalOnMissingBean
     public AuthController authController(
-            OAuthLogic oAuthLogic,
+            AuthLogic authLogic,
+            UserLogic userLogic,
             OAuthTokenRepository tokenRepository,
             UserinfoRepository userinfoRepository
     ) {
-        return new AuthController(oAuthLogic, tokenRepository, userinfoRepository);
+        return new AuthController(authLogic, userLogic, tokenRepository, userinfoRepository);
     }
 
     /**
      * 创建 UserController Bean
      * <p>
-     * 提供获取当前用户信息的 REST API 端点。
      * 仅在启用 gRPC 且存在 SsoRequest Bean 时创建。
      * </p>
      *
@@ -141,7 +211,6 @@ public class BeaconSsoSpringBootAutoConfiguration {
     /**
      * 创建 AccountController Bean
      * <p>
-     * 提供邮箱注册、密码登录与修改密码的 REST API 端点。
      * 仅在启用 gRPC 且存在 SsoRequest Bean 时创建。
      * </p>
      *
@@ -158,7 +227,6 @@ public class BeaconSsoSpringBootAutoConfiguration {
     /**
      * 创建 PublicController Bean
      * <p>
-     * 提供发送注册验证码等公开 API 端点。
      * 仅在启用 gRPC 且存在 SsoRequest Bean 时创建。
      * </p>
      *
@@ -175,7 +243,6 @@ public class BeaconSsoSpringBootAutoConfiguration {
     /**
      * 创建 MerchantController Bean
      * <p>
-     * 提供商户标签查询、公告获取等 REST API 端点。
      * 仅在启用 gRPC 且存在 SsoRequest Bean 时创建。
      * </p>
      *

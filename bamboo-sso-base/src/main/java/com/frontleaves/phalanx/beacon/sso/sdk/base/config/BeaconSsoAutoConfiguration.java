@@ -19,6 +19,14 @@ import org.springframework.context.annotation.PropertySource;
  *   <li>若未配置该属性，默认启用（matchIfMissing = true）</li>
  * </ul>
  * </p>
+ * <p>
+ * 加载顺序：
+ * <ol>
+ *   <li>{@link BeaconSsoClientConfiguration} — SsoClient（WebClient）</li>
+ *   <li>{@link BeaconSsoGrpcConfiguration} — gRPC 通道 + SsoRequest + GrpcUserinfoClient（条件加载）</li>
+ *   <li>{@link BeaconSsoBeanConfiguration} — AuthApi + UserApi + HttpUserinfoClient（@ConditionalOnMissingBean）</li>
+ * </ol>
+ * </p>
  *
  * @author xiao_lfeng
  * @since 0.0.1
@@ -28,17 +36,16 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource("classpath:beacon-sso-defaults.properties")
 @EnableConfigurationProperties(BeaconSsoProperties.class)
 @Import({
-        BeaconSsoCacheConfiguration.class,
         BeaconSsoClientConfiguration.class,
-        BeaconSsoBeanConfiguration.class,
-        BeaconSsoGrpcConfiguration.class
+        BeaconSsoGrpcConfiguration.class,
+        BeaconSsoBeanConfiguration.class
 })
 public class BeaconSsoAutoConfiguration {
 
     /**
      * 默认构造函数
      * <p>
-     * 主配置类，通过 @Import 注解自动加载缓存和 WebClient 配置。
+     * 主配置类，通过 @Import 注解自动加载各子配置模块。
      * </p>
      */
     public BeaconSsoAutoConfiguration() {

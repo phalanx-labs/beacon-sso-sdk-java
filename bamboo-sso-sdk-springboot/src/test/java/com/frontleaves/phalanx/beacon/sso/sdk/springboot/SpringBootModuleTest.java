@@ -1,12 +1,15 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoClient;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.OAuthLogic;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.BusinessLogic;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.OAuthStateRepository;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.OAuthTokenRepository;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.UserinfoRepository;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.AuthApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.UserApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.UserinfoClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.config.BeaconSsoSpringBootAutoConfiguration;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.AuthLogic;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthStateRepository;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthTokenRepository;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.UserinfoRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
@@ -37,9 +40,15 @@ class SpringBootModuleTest {
                         "beacon.sso.redirect-uri=http://localhost:8080/callback"
                 )
                 .run(context -> {
+                    // Base 模块 Bean
                     assertThat(context).hasBean("ssoClient");
-                    assertThat(context).hasBean("oAuthLogic");
-                    assertThat(context).hasBean("businessLogic");
+                    assertThat(context).hasBean("authApi");
+                    assertThat(context).hasBean("userApi");
+                    assertThat(context).hasSingleBean(UserinfoClient.class);
+
+                    // SpringBoot 模块 Bean
+                    assertThat(context).hasBean("authLogic");
+                    assertThat(context).hasBean("userLogic");
                     assertThat(context).hasBean("oauthStateRepository");
                     assertThat(context).hasBean("oauthTokenRepository");
                     assertThat(context).hasBean("userinfoRepository");

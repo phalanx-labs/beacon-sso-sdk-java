@@ -4,10 +4,6 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.grpc.SsoGrpcAuthClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.grpc.SsoGrpcMerchantClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.grpc.SsoGrpcPublicClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.grpc.SsoGrpcUserClient;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.AuthLogic;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.MerchantLogic;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.PublicLogic;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.UserLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.GrpcProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.AuthServiceGrpc;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.ChangePasswordRequest;
@@ -44,6 +40,9 @@ import lombok.extern.slf4j.Slf4j;
  * 对外提供统一的 gRPC 服务访问入口，使用者只需注入 {@code SsoRequest} 即可，
  * 通过 {@code ssoRequest.auth().xxx()} / {@code ssoRequest.user().xxx()} 等方式调用。
  * </p>
+ * <p>
+ * 内部直接持有 gRPC Client 实例，不再依赖 Logic 中间层。
+ * </p>
  *
  * @author xiao_lfeng
  * @since 0.0.1
@@ -51,31 +50,26 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SsoRequest {
 
-    private final AuthLogic authLogic;
-    private final UserLogic userLogic;
-    private final PublicLogic publicLogic;
-    private final MerchantLogic merchantLogic;
+    private final SsoGrpcAuthClient grpcAuthClient;
+    private final SsoGrpcUserClient grpcUserClient;
+    private final SsoGrpcPublicClient grpcPublicClient;
+    private final SsoGrpcMerchantClient grpcMerchantClient;
     private final AuthRequest authRequest;
     private final UserRequest userRequest;
     private final PublicRequest publicRequest;
     private final MerchantRequest merchantRequest;
 
     public SsoRequest(ManagedChannel channel, GrpcProperties grpcProperties) {
-        // 构建 gRPC Stub → Client → Logic
+        // 构建 gRPC Stub → Client
         UserServiceGrpc.UserServiceBlockingStub userStub = UserServiceGrpc.newBlockingStub(channel);
         AuthServiceGrpc.AuthServiceBlockingStub authStub = AuthServiceGrpc.newBlockingStub(channel);
         PublicServiceGrpc.PublicServiceBlockingStub publicStub = PublicServiceGrpc.newBlockingStub(channel);
         MerchantServiceGrpc.MerchantServiceBlockingStub merchantStub = MerchantServiceGrpc.newBlockingStub(channel);
 
-        SsoGrpcUserClient grpcUserClient = new SsoGrpcUserClient(userStub, grpcProperties);
-        SsoGrpcAuthClient grpcAuthClient = new SsoGrpcAuthClient(authStub, grpcProperties);
-        SsoGrpcPublicClient grpcPublicClient = new SsoGrpcPublicClient(publicStub, grpcProperties);
-        SsoGrpcMerchantClient grpcMerchantClient = new SsoGrpcMerchantClient(merchantStub, grpcProperties);
-
-        authLogic = new AuthLogic(grpcAuthClient);
-        userLogic = new UserLogic(grpcUserClient);
-        publicLogic = new PublicLogic(grpcPublicClient);
-        merchantLogic = new MerchantLogic(grpcMerchantClient);
+        grpcAuthClient = new SsoGrpcAuthClient(authStub, grpcProperties);
+        grpcUserClient = new SsoGrpcUserClient(userStub, grpcProperties);
+        grpcPublicClient = new SsoGrpcPublicClient(publicStub, grpcProperties);
+        grpcMerchantClient = new SsoGrpcMerchantClient(merchantStub, grpcProperties);
 
         authRequest = new AuthRequest();
         userRequest = new UserRequest();
@@ -138,7 +132,7 @@ public class SsoRequest {
          * @return 注册响应
          */
         public RegisterByEmailResponse registerByEmail(RegisterByEmailRequest request) {
-            return authLogic.registerByEmail(request);
+            return grpcAuthClient.registerByEmail(request);
         }
 
         /**
@@ -148,7 +142,7 @@ public class SsoRequest {
          * @return 登录响应
          */
         public PasswordLoginResponse passwordLogin(PasswordLoginRequest request) {
-            return authLogic.passwordLogin(request);
+            return grpcAuthClient.passwordLogin(request);
         }
 
         /**
@@ -158,7 +152,7 @@ public class SsoRequest {
          * @return 修改密码响应
          */
         public ChangePasswordResponse changePassword(ChangePasswordRequest request) {
-            return authLogic.changePassword(request);
+            return grpcAuthClient.changePassword(request);
         }
 
         /**
@@ -169,7 +163,7 @@ public class SsoRequest {
          * @return 注销响应
          */
         public RevokeTokenResponse revokeToken(String accessToken, RevokeTokenRequest request) {
-            return authLogic.revokeToken(accessToken, request);
+            return grpcAuthClient.revokeToken(accessToken, request);
         }
     }
 
@@ -190,7 +184,7 @@ public class SsoRequest {
          * @return 用户信息
          */
         public User getCurrentUser(String accessToken) {
-            return userLogic.getCurrentUser(accessToken);
+            return grpcUserClient.getCurrentUser(accessToken);
         }
 
         /**
@@ -201,7 +195,7 @@ public class SsoRequest {
          * @return 用户信息
          */
         public User getUserById(String accessToken, GetUserByIDRequest request) {
-            return userLogic.getUserById(accessToken, request);
+            return grpcUserClient.getUserById(accessToken, request);
         }
     }
 
@@ -222,7 +216,7 @@ public class SsoRequest {
          * @return 发送结果
          */
         public SendRegisterEmailCodeResponse sendRegisterEmailCode(SendRegisterEmailCodeRequest request) {
-            return publicLogic.sendRegisterEmailCode(request);
+            return grpcPublicClient.sendRegisterEmailCode(request);
         }
     }
 
@@ -243,7 +237,7 @@ public class SsoRequest {
          * @return 商户标签列表
          */
         public GetMerchantTagsResponse getMerchantTags(GetMerchantTagsRequest request) {
-            return merchantLogic.getMerchantTags(request);
+            return grpcMerchantClient.getMerchantTags(request);
         }
 
         /**
@@ -253,7 +247,7 @@ public class SsoRequest {
          * @return 用户标签列表
          */
         public GetUserTagsResponse getUserTags(GetUserTagsRequest request) {
-            return merchantLogic.getUserTags(request);
+            return grpcMerchantClient.getUserTags(request);
         }
 
         /**
@@ -263,7 +257,7 @@ public class SsoRequest {
          * @return 检查结果
          */
         public CheckUserHasTagResponse checkUserHasTag(CheckUserHasTagRequest request) {
-            return merchantLogic.checkUserHasTag(request);
+            return grpcMerchantClient.checkUserHasTag(request);
         }
 
         /**
@@ -273,7 +267,7 @@ public class SsoRequest {
          * @return 最近公告列表
          */
         public GetRecentAnnouncementsResponse getRecentAnnouncements(GetRecentAnnouncementsRequest request) {
-            return merchantLogic.getRecentAnnouncements(request);
+            return grpcMerchantClient.getRecentAnnouncements(request);
         }
 
         /**
@@ -283,7 +277,7 @@ public class SsoRequest {
          * @return 公告详情
          */
         public GetAnnouncementResponse getAnnouncement(GetAnnouncementRequest request) {
-            return merchantLogic.getAnnouncement(request);
+            return grpcMerchantClient.getAnnouncement(request);
         }
     }
 }

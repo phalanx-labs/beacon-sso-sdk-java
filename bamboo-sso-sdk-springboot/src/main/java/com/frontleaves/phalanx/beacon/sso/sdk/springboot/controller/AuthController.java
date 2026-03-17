@@ -1,13 +1,14 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.OAuthLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthToken;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.OAuthTokenRepository;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.UserinfoRepository;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.AuthLogic;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.OAuthCallback;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.OAuthLogout;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.OAuthStatus;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthTokenRepository;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.UserinfoRepository;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
 import com.xlf.utility.mvc.ResultUtil;
@@ -58,7 +59,8 @@ public class AuthController {
      */
     private static final String SESSION_USER_KEY = "OAUTH_USER";
 
-    private final OAuthLogic oAuthLogic;
+    private final AuthLogic authLogic;
+    private final UserLogic userLogic;
     private final OAuthTokenRepository tokenRepository;
     private final UserinfoRepository userinfoRepository;
 
@@ -75,7 +77,7 @@ public class AuthController {
     public RedirectView login() {
         log.info("发起 OAuth 登录流程");
 
-        String authorizationUrl = oAuthLogic.generateAuthorizationUrl().block();
+        String authorizationUrl = authLogic.generateAuthorizationUrl().block();
 
         log.debug("重定向到授权 URL: {}", authorizationUrl);
         return new RedirectView(authorizationUrl);
@@ -119,7 +121,7 @@ public class AuthController {
 
         try {
             // 处理回调，交换令牌
-            OAuthToken token = oAuthLogic.handleCallback(code, state).block();
+            OAuthToken token = authLogic.handleCallback(code, state).block();
 
             if (token != null) {
                 // 存储令牌到 Session
@@ -174,14 +176,14 @@ public class AuthController {
             // 撤销访问令牌
             if (token.getAccessToken() != null) {
                 revoked = Boolean.TRUE.equals(
-                        oAuthLogic.revokeToken(token.getAccessToken(), "access_token").block()
+                        authLogic.revokeToken(token.getAccessToken(), "access_token").block()
                 );
                 log.debug("Access token revoked: {}", revoked);
             }
 
             // 撤销刷新令牌
             if (token.getRefreshToken() != null) {
-                oAuthLogic.revokeToken(token.getRefreshToken(), "refresh_token").block();
+                authLogic.revokeToken(token.getRefreshToken(), "refresh_token").block();
                 log.debug("Refresh token revoked");
             }
         }
@@ -268,9 +270,6 @@ public class AuthController {
 
     /**
      * 获取会话键
-     * <p>
-     * 生成用于在 Repository 中存储令牌的唯一键。
-     * </p>
      *
      * @param session HTTP 会话
      * @return 会话键字符串

@@ -2,9 +2,9 @@ package com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.BusinessLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
 import jakarta.servlet.FilterChain;
@@ -57,9 +57,9 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     /**
-     * 业务逻辑处理（响应式）
+     * 用户业务逻辑处理
      */
-    private final BusinessLogic businessLogic;
+    private final UserLogic userLogic;
 
     /**
      * SSO 配置属性
@@ -93,7 +93,7 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
 
         try {
             // 2. 调用令牌自省接口验证 Token
-            OAuthIntrospection introspection = businessLogic
+            OAuthIntrospection introspection = userLogic
                     .introspectToken(token)
                     .block();
 
