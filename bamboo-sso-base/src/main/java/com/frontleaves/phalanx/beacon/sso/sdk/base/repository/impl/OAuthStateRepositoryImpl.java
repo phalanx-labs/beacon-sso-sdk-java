@@ -22,7 +22,6 @@ import java.util.Optional;
  * @since 1.0.0
  */
 @Slf4j
-@Repository
 public class OAuthStateRepositoryImpl implements OAuthStateRepository {
 
     /**

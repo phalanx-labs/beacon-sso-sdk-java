@@ -11,7 +11,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -38,7 +37,6 @@ import java.util.Optional;
  */
 @Slf4j
 @Aspect
-@Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class InjectDataAspect {
 

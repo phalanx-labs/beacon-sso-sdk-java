@@ -7,7 +7,6 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.OAuthTokenReposito
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 /**
@@ -21,7 +20,6 @@ import reactor.core.publisher.Mono;
  * @since 1.0.0
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class BaseOAuthApi {
 

@@ -1,14 +1,14 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.logic;
 
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.SsoConfigurationException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -21,52 +21,18 @@ import reactor.core.publisher.Mono;
  * 业务逻辑（响应式）
  * <p>
  * 提供 SSO 相关的业务功能，包括获取用户信息、令牌自省和令牌验证。
- * 使用已配置的 WebClient 进行响应式 HTTP 调用。
+ * 使用 {@link SsoClient} 提供的 WebClient 进行响应式 HTTP 调用。
  * </p>
  *
  * @author xiao_lfeng
  * @since 0.0.1-SNAPSHOT
  */
 @Slf4j
-@Service
+@RequiredArgsConstructor
 public class BusinessLogic {
 
     private final BeaconSsoProperties properties;
-    private final WebClient userinfoWebClient;
-    private final WebClient oauthWebClient;
-
-    /**
-     * 构造函数
-     *
-     * @param properties        SSO 配置属性
-     * @param userinfoWebClient 用户信息专用 WebClient
-     * @param oauthWebClient    OAuth 专用 WebClient
-     */
-    public BusinessLogic(
-            BeaconSsoProperties properties,
-            @Qualifier("beaconSsoUserinfoWebClient") WebClient userinfoWebClient,
-            @Qualifier("beaconSsoOAuthWebClient") WebClient oauthWebClient
-    ) {
-        this.properties = properties;
-        this.userinfoWebClient = userinfoWebClient;
-        this.oauthWebClient = oauthWebClient;
-        // 初始化时验证配置
-        validateConfiguration();
-    }
-
-    /**
-     * 验证 SSO 配置是否有效
-     *
-     * @throws SsoConfigurationException 如果配置无效
-     */
-    private void validateConfiguration() {
-        if (!StringUtils.hasText(properties.getBaseUrl())) {
-            throw new SsoConfigurationException("SSO 基础 URL 未配置");
-        }
-        if (!StringUtils.hasText(properties.getClientId())) {
-            throw new SsoConfigurationException("SSO 客户端 ID 未配置");
-        }
-    }
+    private final SsoClient ssoClient;
 
     /**
      * 获取用户信息
@@ -96,8 +62,10 @@ public class BusinessLogic {
 
             log.debug("正在从以下地址获取用户信息: {}", userinfoUrl);
 
+            WebClient webClient = ssoClient.getUserinfoWebClient();
+
             // 发送用户信息请求
-            return userinfoWebClient
+            return webClient
                     .get()
                     .uri(userinfoUrl)
                     .header("Authorization", "Bearer " + accessToken)
@@ -171,8 +139,10 @@ public class BusinessLogic {
 
             log.debug("正在内省令牌: {}", introspectUrl);
 
+            WebClient webClient = ssoClient.getOAuthWebClient();
+
             // 发送令牌自省请求
-            return oauthWebClient
+            return webClient
                     .post()
                     .uri(introspectUrl)
                     .header("Content-Type", "application/x-www-form-urlencoded")

@@ -4,7 +4,6 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.api.base.BaseOAuthApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 /**
  * 阻塞式 OAuth API（适配 Servlet）
@@ -20,7 +19,6 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class OAuthApi {
 

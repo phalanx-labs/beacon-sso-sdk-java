@@ -64,7 +64,7 @@ public class BeaconSsoCacheConfiguration {
         cacheManager.registerCustomCache(
                 SsoCacheConstants.CACHE_OAUTH_TOKEN,
                 Caffeine.newBuilder()
-                        .expireAfterWrite(3600, TimeUnit.SECONDS) // 默认1小时
+                        .expireAfterWrite(3600, TimeUnit.SECONDS)
                         .maximumSize(10_000)
                         .build()
         );

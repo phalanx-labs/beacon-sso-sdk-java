@@ -1,5 +1,6 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.config.BeaconSsoAutoConfiguration;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.OAuthLogic;
@@ -7,6 +8,8 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.logic.BusinessLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.OAuthTokenRepository;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.UserinfoRepository;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.InjectDataAspect;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.PermissionAspect;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.AccountController;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.AuthController;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.MerchantController;
@@ -19,6 +22,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 
 /**
@@ -39,41 +43,43 @@ import org.springframework.context.annotation.Import;
  * @since 0.0.1
  */
 @Configuration
+@EnableAspectJAutoProxy
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(prefix = "beacon.sso", name = "enabled", havingValue = "true", matchIfMissing = true)
 @Import(BeaconSsoAutoConfiguration.class)
 public class BeaconSsoSpringBootAutoConfiguration {
 
     /**
-     * 创建 OAuthApi Bean
+     * 注册 InjectDataAspect Bean
      * <p>
-     * 提供 OAuth 授权码流程相关的 API，包括生成授权 URL、处理回调、刷新令牌等功能。
-     * 如果用户已经定义了自己的 OAuthApi Bean，则不创建。
+     * 处理带有 {@code @InjectData} 注解的方法参数，
+     * 从请求属性中获取 OAuthIntrospection 并注入相应字段值。
      * </p>
      *
-     * @param oAuthLogic OAuth 逻辑处理类
-     * @return OAuthApi 实例
+     * @return InjectDataAspect 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    public OAuthLogic oAuthApi(OAuthLogic oAuthLogic) {
-        return oAuthLogic;
+    public InjectDataAspect injectDataAspect() {
+        return new InjectDataAspect();
     }
+
     /**
-     * 创建 BusinessApi Bean
+     * 注册 PermissionAspect Bean
      * <p>
-     * 提供业务相关的 API，包括获取用户信息、令牌自省、令牌验证等功能。
-     * 如果用户已经定义了自己的 BusinessApi Bean，则不创建。
+     * 拦截带有 {@code @PermissionVerify} 注解的方法，
+     * 验证用户是否具有所需的 OAuth scope 权限。
      * </p>
      *
-     * @param businessLogic 业务逻辑处理类
-     * @return BusinessApi 实例
+     * @param objectMapper JSON 序列化工具
+     * @return PermissionAspect 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    public BusinessLogic businessApi(BusinessLogic businessLogic) {
-        return businessLogic;
+    public PermissionAspect permissionAspect(ObjectMapper objectMapper) {
+        return new PermissionAspect(objectMapper);
     }
+
     /**
      * 创建 BeaconSsoFilter Bean
      * <p>

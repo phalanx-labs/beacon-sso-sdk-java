@@ -5,7 +5,6 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 /**
  * 阻塞式业务 API（适配 Servlet）
@@ -22,7 +21,6 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class BusinessApi {
 

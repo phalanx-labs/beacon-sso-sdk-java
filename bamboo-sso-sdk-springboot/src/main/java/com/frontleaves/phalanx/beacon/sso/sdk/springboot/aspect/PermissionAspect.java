@@ -14,7 +14,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -43,7 +42,6 @@ import java.util.Set;
  */
 @Slf4j
 @Aspect
-@Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @RequiredArgsConstructor
 public class PermissionAspect {

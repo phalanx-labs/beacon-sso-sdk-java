@@ -30,6 +30,7 @@ import org.springframework.context.annotation.PropertySource;
 @Import({
         BeaconSsoCacheConfiguration.class,
         BeaconSsoClientConfiguration.class,
+        BeaconSsoBeanConfiguration.class,
         BeaconSsoGrpcConfiguration.class
 })
 public class BeaconSsoAutoConfiguration {

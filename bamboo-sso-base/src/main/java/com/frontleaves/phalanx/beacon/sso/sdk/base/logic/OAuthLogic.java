@@ -1,5 +1,6 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.logic;
 
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.OAuthStateException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.SsoConfigurationException;
@@ -11,8 +12,6 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.repository.OAuthStateReposito
 import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.PkceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -36,7 +35,6 @@ import java.util.UUID;
  * @since 0.0.1-SNAPSHOT
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class OAuthLogic {
 
@@ -56,8 +54,7 @@ public class OAuthLogic {
     private static final Base64.Encoder BASE64_URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
 
     private final BeaconSsoProperties properties;
-    @Qualifier("beaconSsoOAuthWebClient")
-    private final WebClient webClient;
+    private final SsoClient ssoClient;
     private final OAuthStateRepository stateRepository;
 
     /**
@@ -260,6 +257,8 @@ public class OAuthLogic {
 
             log.debug("正在刷新令牌: {}", tokenUrl);
 
+            WebClient webClient = ssoClient.getOAuthWebClient();
+
             // 发送令牌刷新请求
             return webClient
                     .post()
@@ -336,6 +335,8 @@ public class OAuthLogic {
 
             log.debug("正在撤销令牌: {}", revokeUrl);
 
+            WebClient webClient = ssoClient.getOAuthWebClient();
+
             // 发送令牌撤销请求
             return webClient
                     .post()
@@ -385,6 +386,8 @@ public class OAuthLogic {
                 .toUriString();
 
         log.debug("正在用授权码交换令牌: {}", tokenUrl);
+
+        WebClient webClient = ssoClient.getOAuthWebClient();
 
         // 发送令牌请求
         return webClient
