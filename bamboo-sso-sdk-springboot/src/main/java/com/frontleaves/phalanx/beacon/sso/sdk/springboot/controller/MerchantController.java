@@ -1,16 +1,15 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoMerchantApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoAnnouncementListMeta;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoMerchantAnnouncement;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoMerchantTag;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoRecentAnnouncementsResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.CheckUserHasTagRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.CheckUserHasTagResponse;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetAnnouncementRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetAnnouncementResponse;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetMerchantTagsRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetMerchantTagsResponse;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetRecentAnnouncementsRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetRecentAnnouncementsResponse;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserTagsRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserTagsResponse;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.AnnouncementListMeta;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.RecentAnnouncements;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.MerchantAnnouncement;
@@ -55,7 +54,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MerchantController {
 
-    private final SsoRequest ssoRequest;
+    private final SsoMerchantApi ssoMerchantApi;
 
     /**
      * 获取商户标签列表
@@ -78,8 +77,8 @@ public class MerchantController {
         }
 
         try {
-            GetMerchantTagsResponse response = ssoRequest.merchant().getMerchantTags(builder.build());
-            List<MerchantTag> data = response.getTagsList().stream()
+            List<SsoMerchantTag> tags = ssoMerchantApi.getMerchantTags(builder.build());
+            List<MerchantTag> data = tags.stream()
                     .map(this::toMerchantTag)
                     .toList();
             return ResultUtil.success("获取商户标签成功", data.isEmpty() ? null : data);
@@ -114,8 +113,8 @@ public class MerchantController {
                 .build();
 
         try {
-            GetUserTagsResponse response = ssoRequest.merchant().getUserTags(grpcRequest);
-            List<MerchantTag> data = response.getTagsList().stream()
+            List<SsoMerchantTag> tags = ssoMerchantApi.getUserTags(grpcRequest);
+            List<MerchantTag> data = tags.stream()
                     .map(this::toMerchantTag)
                     .toList();
             return ResultUtil.success("获取用户标签成功", data.isEmpty() ? null : data);
@@ -156,8 +155,8 @@ public class MerchantController {
                 .build();
 
         try {
-            CheckUserHasTagResponse response = ssoRequest.merchant().checkUserHasTag(grpcRequest);
-            return ResultUtil.success("检查用户标签成功", response.getHasTag());
+            boolean hasTag = ssoMerchantApi.checkUserHasTag(grpcRequest);
+            return ResultUtil.success("检查用户标签成功", hasTag);
         } catch (Exception e) {
             log.warn("Check user has tag failed: {}", e.getMessage(), e);
             ErrorCode errorCode = this.mapExceptionToErrorCode(e);
@@ -191,13 +190,13 @@ public class MerchantController {
         }
 
         try {
-            GetRecentAnnouncementsResponse response = ssoRequest.merchant().getRecentAnnouncements(builder.build());
-            List<MerchantAnnouncement> announcements = response.getAnnouncementsList().stream()
+            SsoRecentAnnouncementsResult recentResult = ssoMerchantApi.getRecentAnnouncements(builder.build());
+            List<MerchantAnnouncement> announcements = recentResult.getAnnouncements() == null ? List.of() : recentResult.getAnnouncements().stream()
                     .map(this::toMerchantAnnouncement)
                     .toList();
             RecentAnnouncements data = RecentAnnouncements.builder()
                     .announcements(announcements.isEmpty() ? null : announcements)
-                    .meta(this.toAnnouncementListMeta(response.getMeta()))
+                    .meta(this.toAnnouncementListMeta(recentResult.getMeta()))
                     .build();
             return ResultUtil.success("获取最近公告成功", data);
         } catch (Exception e) {
@@ -231,8 +230,8 @@ public class MerchantController {
                 .build();
 
         try {
-            GetAnnouncementResponse response = ssoRequest.merchant().getAnnouncement(grpcRequest);
-            MerchantAnnouncement data = this.toMerchantAnnouncement(response.getAnnouncement());
+            SsoMerchantAnnouncement announcement = ssoMerchantApi.getAnnouncement(grpcRequest);
+            MerchantAnnouncement data = this.toMerchantAnnouncement(announcement);
             return ResultUtil.success("获取公告详情成功", data);
         } catch (Exception e) {
             log.warn("Get announcement failed: {}", e.getMessage(), e);
@@ -241,7 +240,7 @@ public class MerchantController {
         }
     }
 
-    private MerchantTag toMerchantTag(com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.MerchantTag tag) {
+    private MerchantTag toMerchantTag(SsoMerchantTag tag) {
         if (tag == null) {
             return null;
         }
@@ -249,15 +248,15 @@ public class MerchantController {
                 .id(tag.getId())
                 .code(tag.getCode())
                 .name(tag.getName())
-                .description(tag.hasDescription() ? tag.getDescription() : null)
-                .color(tag.hasColor() ? tag.getColor() : null)
-                .icon(tag.hasIcon() ? tag.getIcon() : null)
+                .description(tag.getDescription())
+                .color(tag.getColor())
+                .icon(tag.getIcon())
                 .sortOrder(tag.getSortOrder() == 0 ? null : tag.getSortOrder())
                 .status(tag.getStatus() == 0 ? null : tag.getStatus())
                 .build();
     }
 
-    private MerchantAnnouncement toMerchantAnnouncement(com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.MerchantAnnouncement announcement) {
+    private MerchantAnnouncement toMerchantAnnouncement(SsoMerchantAnnouncement announcement) {
         if (announcement == null) {
             return null;
         }
@@ -266,12 +265,12 @@ public class MerchantController {
                 .title(announcement.getTitle())
                 .content(announcement.getContent())
                 .scope(announcement.getScope() == 0 ? null : announcement.getScope())
-                .displayUntil(announcement.hasDisplayUntil() ? announcement.getDisplayUntil() : null)
+                .displayUntil(announcement.getDisplayUntil())
                 .createdAt(announcement.getCreatedAt())
                 .build();
     }
 
-    private AnnouncementListMeta toAnnouncementListMeta(com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.AnnouncementListMeta meta) {
+    private AnnouncementListMeta toAnnouncementListMeta(SsoAnnouncementListMeta meta) {
         if (meta == null) {
             return null;
         }

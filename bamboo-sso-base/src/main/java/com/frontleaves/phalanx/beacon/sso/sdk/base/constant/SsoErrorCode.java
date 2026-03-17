@@ -54,7 +54,12 @@ public enum SsoErrorCode {
     /**
      * SSO 配置无效
      */
-    CONFIGURATION_ERROR("configuration_error", "SSO 配置无效");
+    CONFIGURATION_ERROR("configuration_error", "SSO 配置无效"),
+
+    /**
+     * gRPC 通信未启用
+     */
+    GRPC_NOT_ENABLED("grpc_not_enabled", "gRPC 通信未启用，无法执行此操作");
 
     /**
      * 错误码

@@ -1,9 +1,9 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoAccountApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoHeaderConstants;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.PasswordLoginResponse;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RegisterByEmailResponse;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoLoginResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoRegisterResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.ChangePasswordRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.PasswordLoginRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.RevokeTokenRequest;
@@ -53,7 +53,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AccountController {
 
-    private final SsoRequest ssoRequest;
+    private final SsoAccountApi ssoAccountApi;
 
     /**
      * 邮箱注册
@@ -84,7 +84,7 @@ public class AccountController {
         }
 
         try {
-            RegisterByEmailResponse response = ssoRequest.auth().registerByEmail(builder.build());
+            SsoRegisterResult response = ssoAccountApi.registerByEmail(builder.build());
             RegisterByEmail data = this.toRegisterResponse(response);
             return ResultUtil.success("注册成功", data);
         } catch (Exception e) {
@@ -123,7 +123,7 @@ public class AccountController {
         }
 
         try {
-            PasswordLoginResponse response = ssoRequest.auth().passwordLogin(builder.build());
+            SsoLoginResult response = ssoAccountApi.passwordLogin(builder.build());
             PasswordLogin data = this.toLoginResponse(response);
             return ResultUtil.success("登录成功", data);
         } catch (Exception e) {
@@ -157,7 +157,7 @@ public class AccountController {
         }
 
         try {
-            ssoRequest.auth().changePassword(builder.build());
+            ssoAccountApi.changePassword(builder.build());
             return ResultUtil.success("修改密码成功", null);
         } catch (Exception e) {
             log.warn("Change password failed: {}", e.getMessage(), e);
@@ -203,7 +203,7 @@ public class AccountController {
         }
 
         try {
-            ssoRequest.auth().revokeToken(accessToken, revokeTokenRequestBuilder.build());
+            ssoAccountApi.revokeToken(accessToken, revokeTokenRequestBuilder.build());
             return ResultUtil.success("注销成功", null);
         } catch (Exception e) {
             log.warn("Revoke token failed: {}", e.getMessage(), e);
@@ -212,7 +212,7 @@ public class AccountController {
         }
     }
 
-    private RegisterByEmail toRegisterResponse(RegisterByEmailResponse response) {
+    private RegisterByEmail toRegisterResponse(SsoRegisterResult response) {
         if (response == null) {
             return null;
         }
@@ -222,7 +222,7 @@ public class AccountController {
                 .build();
     }
 
-    private PasswordLogin toLoginResponse(PasswordLoginResponse response) {
+    private PasswordLogin toLoginResponse(SsoLoginResult response) {
         if (response == null) {
             return null;
         }
@@ -230,9 +230,9 @@ public class AccountController {
                 .accessToken(response.getAccessToken())
                 .tokenType(response.getTokenType())
                 .expiresIn(response.getExpiresIn())
-                .refreshToken(response.hasRefreshToken() ? response.getRefreshToken() : null)
-                .scope(response.hasScope() ? response.getScope() : null)
-                .idToken(response.hasIdToken() ? response.getIdToken() : null)
+                .refreshToken(response.getRefreshToken())
+                .scope(response.getScope())
+                .idToken(response.getIdToken())
                 .build();
     }
 

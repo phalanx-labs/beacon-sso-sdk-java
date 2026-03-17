@@ -1,9 +1,9 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoClient;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.AuthApi;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.UserApi;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.UserinfoClient;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoOAuthApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoUserApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.UserinfoClient;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.config.BeaconSsoSpringBootAutoConfiguration;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.AuthLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
@@ -42,8 +42,8 @@ class SpringBootModuleTest {
                 .run(context -> {
                     // Base 模块 Bean
                     assertThat(context).hasBean("ssoClient");
-                    assertThat(context).hasBean("authApi");
-                    assertThat(context).hasBean("userApi");
+                    assertThat(context).hasSingleBean(SsoOAuthApi.class);
+                    assertThat(context).hasSingleBean(SsoUserApi.class);
                     assertThat(context).hasSingleBean(UserinfoClient.class);
 
                     // SpringBoot 模块 Bean

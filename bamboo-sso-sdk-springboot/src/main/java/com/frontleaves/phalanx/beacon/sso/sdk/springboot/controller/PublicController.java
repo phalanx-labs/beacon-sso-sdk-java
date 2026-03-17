@@ -1,6 +1,6 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoPublicApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.SendRegisterEmailCodeRequest;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class PublicController {
 
-    private final SsoRequest ssoRequest;
+    private final SsoPublicApi ssoPublicApi;
 
     /**
      * 发送注册邮箱验证码
@@ -59,7 +59,7 @@ public class PublicController {
                 .build();
 
         try {
-            ssoRequest.publicService().sendRegisterEmailCode(grpcRequest);
+            ssoPublicApi.sendRegisterEmailCode(grpcRequest);
             return ResultUtil.success("验证码发送成功", null);
         } catch (Exception e) {
             log.warn("Send register email code failed: {}", e.getMessage(), e);

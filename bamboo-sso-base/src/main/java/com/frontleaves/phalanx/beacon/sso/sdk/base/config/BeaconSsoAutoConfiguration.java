@@ -23,8 +23,8 @@ import org.springframework.context.annotation.PropertySource;
  * 加载顺序：
  * <ol>
  *   <li>{@link BeaconSsoClientConfiguration} — SsoClient（WebClient）</li>
- *   <li>{@link BeaconSsoGrpcConfiguration} — gRPC 通道 + SsoRequest + GrpcUserinfoClient（条件加载）</li>
- *   <li>{@link BeaconSsoBeanConfiguration} — AuthApi + UserApi + HttpUserinfoClient（@ConditionalOnMissingBean）</li>
+ *   <li>{@link BeaconSsoGrpcConfiguration} — gRPC 通道 + SsoRequest + gRPC API 实现（条件加载）</li>
+ *   <li>{@link BeaconSsoBeanConfiguration} — SsoOAuthApi + SsoUserApi + HttpUserinfoClient（@ConditionalOnMissingBean）</li>
  * </ol>
  * </p>
  *

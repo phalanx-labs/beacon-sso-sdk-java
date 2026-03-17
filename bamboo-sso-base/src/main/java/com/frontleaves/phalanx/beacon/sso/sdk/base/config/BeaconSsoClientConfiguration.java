@@ -1,6 +1,6 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.config;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoClient;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;

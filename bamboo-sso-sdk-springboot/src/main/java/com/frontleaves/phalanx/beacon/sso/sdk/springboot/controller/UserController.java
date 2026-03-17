@@ -1,10 +1,11 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoUserApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoHeaderConstants;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoRole;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoUserDetail;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserByIDRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.Role;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.User;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.UserInfo;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.UserRole;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.utility.SsoSecurityUtil;
@@ -47,7 +48,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final SsoRequest ssoRequest;
+    private final SsoUserApi ssoUserApi;
 
     /**
      * 获取当前用户信息
@@ -76,8 +77,8 @@ public class UserController {
         }
 
         try {
-            User user = ssoRequest.user().getCurrentUser(tokenOpt.get());
-            UserInfo data = this.toUserInfo(user);
+            OAuthUserinfo oauthUserinfo = ssoUserApi.getCurrentUser(tokenOpt.get()).block();
+            UserInfo data = this.toUserInfo(oauthUserinfo);
             return ResultUtil.success("获取用户信息成功", data);
         } catch (Exception e) {
             log.warn("获取当前用户信息失败: {}", e.getMessage(), e);
@@ -122,8 +123,8 @@ public class UserController {
             GetUserByIDRequest grpcRequest = GetUserByIDRequest.newBuilder()
                     .setUserId(userId)
                     .build();
-            User user = ssoRequest.user().getUserById(tokenOpt.get(), grpcRequest);
-            UserInfo data = this.toUserInfo(user);
+            SsoUserDetail userDetail = ssoUserApi.getUserById(tokenOpt.get(), grpcRequest);
+            UserInfo data = this.toUserInfo(userDetail);
             return ResultUtil.success("获取用户信息成功", data);
         } catch (Exception e) {
             log.warn("按 ID 获取用户信息失败: {}", e.getMessage(), e);
@@ -132,42 +133,57 @@ public class UserController {
         }
     }
 
-    private UserInfo toUserInfo(User user) {
-        if (user == null) {
+    private UserInfo toUserInfo(OAuthUserinfo userinfo) {
+        if (userinfo == null) {
             return null;
         }
 
-        List<UserRole> roles = user.getRolesList().stream()
+        return UserInfo.builder()
+                .id(userinfo.getSub())
+                .username(userinfo.getPreferredUsername())
+                .nickname(userinfo.getName())
+                .email(userinfo.getEmail())
+                .emailVerified(userinfo.getEmailVerified())
+                .avatar(userinfo.getPicture())
+                .build();
+    }
+
+    private UserInfo toUserInfo(SsoUserDetail detail) {
+        if (detail == null) {
+            return null;
+        }
+
+        List<UserRole> roles = detail.getRoles() == null ? null : detail.getRoles().stream()
                 .map(this::toUserRole)
                 .toList();
 
         return UserInfo.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .nickname(user.getNickname())
-                .email(user.hasEmail() ? user.getEmail() : null)
-                .phone(user.hasPhone() ? user.getPhone() : null)
-                .avatar(user.hasAvatar() ? user.getAvatar() : null)
-                .gender(user.getGender())
-                .birthday(user.hasBirthday() ? user.getBirthday() : null)
-                .status(user.getStatus())
-                .emailVerified(user.getIsEmailVerified())
-                .phoneVerified(user.getIsPhoneVerified())
-                .needResetPassword(user.getNeedResetPassword())
-                .lastLoginAt(user.hasLastLoginAt() ? user.getLastLoginAt() : null)
-                .lastLoginIp(user.hasLastLoginIp() ? user.getLastLoginIp() : null)
-                .roles(roles.isEmpty() ? null : roles)
+                .id(detail.getId())
+                .username(detail.getUsername())
+                .nickname(detail.getNickname())
+                .email(detail.getEmail())
+                .phone(detail.getPhone())
+                .avatar(detail.getAvatar())
+                .gender(detail.getGender() == 0 ? null : detail.getGender())
+                .birthday(detail.getBirthday())
+                .status(detail.getStatus() == 0 ? null : detail.getStatus())
+                .emailVerified(detail.isEmailVerified())
+                .phoneVerified(detail.isPhoneVerified())
+                .needResetPassword(detail.isNeedResetPassword())
+                .lastLoginAt(detail.getLastLoginAt())
+                .lastLoginIp(detail.getLastLoginIp())
+                .roles(roles)
                 .build();
     }
 
-    private UserRole toUserRole(Role role) {
+    private UserRole toUserRole(SsoRole role) {
         if (role == null) {
             return null;
         }
         return UserRole.builder()
                 .code(role.getCode())
                 .name(role.getName())
-                .description(role.hasDescription() ? role.getDescription() : null)
+                .description(role.getDescription())
                 .build();
     }
 

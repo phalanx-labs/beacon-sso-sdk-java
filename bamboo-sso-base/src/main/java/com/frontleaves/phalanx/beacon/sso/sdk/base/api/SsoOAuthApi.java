@@ -1,8 +1,8 @@
-package com.frontleaves.phalanx.beacon.sso.sdk.base.client;
+package com.frontleaves.phalanx.beacon.sso.sdk.base.api;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.SsoConfigurationException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthState;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthToken;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
@@ -18,10 +18,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 /**
- * HTTP OAuth 客户端（纯请求调度）
+ * OAuth 2.0 协议操作（HTTP-only）
  * <p>
- * 封装 OAuth 2.0 协议相关的 HTTP 请求，包括授权 URL 生成、授权码交换、
- * 令牌刷新和撤销。不包含状态管理和缓存逻辑。
+ * 封装 OAuth 2.0 协议相关操作，包括授权 URL 生成、授权码交换、
+ * 令牌刷新、撤销、自省和验证。所有方法均通过 HTTP 协议与 SSO 服务通信。
  * </p>
  *
  * @author xiao_lfeng
@@ -29,17 +29,13 @@ import reactor.core.publisher.Mono;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AuthApi {
+public class SsoOAuthApi {
 
     private final BeaconSsoProperties properties;
     private final SsoClient ssoClient;
 
     /**
      * 生成授权 URL（默认 scope）
-     * <p>
-     * 纯计算操作，不发起 HTTP 请求。
-     * State 和 PKCE 参数由调用方（如 SpringBoot AuthLogic）生成并管理。
-     * </p>
      *
      * @param state         state 参数
      * @param codeChallenge PKCE code_challenge
@@ -66,12 +62,11 @@ public class AuthApi {
      * 使用授权码交换令牌
      *
      * @param code       授权码
-     * @param oauthState 已验证的 OAuth State（含 codeVerifier 和 redirectUri）
+     * @param oauthState 已验证的 OAuth State
      * @return OAuthToken 令牌响应
      */
     public Mono<OAuthToken> exchangeCodeForToken(String code, OAuthState oauthState) {
         return Mono.defer(() -> {
-            // 构建请求参数
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
             formData.add("grant_type", "authorization_code");
             formData.add("code", code);
@@ -83,7 +78,6 @@ public class AuthApi {
                 formData.add("client_secret", properties.getClientSecret());
             }
 
-            // 构建令牌端点 URL
             String tokenUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
                     .path(properties.getEndpoints().getTokenUri())
                     .build()
@@ -93,7 +87,6 @@ public class AuthApi {
 
             WebClient webClient = ssoClient.getOAuthWebClient();
 
-            // 发送令牌请求
             return webClient
                     .post()
                     .uri(tokenUrl)
@@ -136,7 +129,6 @@ public class AuthApi {
                 ));
             }
 
-            // 构建请求参数
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
             formData.add("grant_type", "refresh_token");
             formData.add("refresh_token", refreshToken);
@@ -146,7 +138,6 @@ public class AuthApi {
                 formData.add("client_secret", properties.getClientSecret());
             }
 
-            // 构建令牌端点 URL
             String tokenUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
                     .path(properties.getEndpoints().getTokenUri())
                     .build()
@@ -156,7 +147,6 @@ public class AuthApi {
 
             WebClient webClient = ssoClient.getOAuthWebClient();
 
-            // 发送令牌刷新请求
             return webClient
                     .post()
                     .uri(tokenUrl)
@@ -188,7 +178,7 @@ public class AuthApi {
      * 撤销令牌
      *
      * @param token     要撤销的令牌
-     * @param tokenType 令牌类型（access_token 或 refresh_token）
+     * @param tokenType 令牌类型
      * @return 如果撤销成功返回 {@code true}，否则返回 {@code false}
      */
     public Mono<Boolean> revokeToken(String token, String tokenType) {
@@ -198,7 +188,6 @@ public class AuthApi {
                 return Mono.just(false);
             }
 
-            // 构建请求参数
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
             formData.add("token", token);
             formData.add("token_type_hint", tokenType);
@@ -208,7 +197,6 @@ public class AuthApi {
                 formData.add("client_secret", properties.getClientSecret());
             }
 
-            // 构建撤销端点 URL
             String revokeUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
                     .path(properties.getEndpoints().getRevocationUri())
                     .build()
@@ -218,7 +206,6 @@ public class AuthApi {
 
             WebClient webClient = ssoClient.getOAuthWebClient();
 
-            // 发送令牌撤销请求
             return webClient
                     .post()
                     .uri(revokeUrl)
@@ -235,6 +222,98 @@ public class AuthApi {
                         return Mono.just(false);
                     });
         });
+    }
+
+    /**
+     * 令牌自省
+     *
+     * @param token 要自省的令牌
+     * @return OAuthIntrospection 令牌自省结果
+     */
+    public Mono<OAuthIntrospection> introspectToken(String token) {
+        return introspectToken(token, "access_token");
+    }
+
+    /**
+     * 令牌自省（指定令牌类型）
+     *
+     * @param token     要自省的令牌
+     * @param tokenType 令牌类型提示
+     * @return OAuthIntrospection 令牌自省结果
+     */
+    public Mono<OAuthIntrospection> introspectToken(String token, String tokenType) {
+        return Mono.defer(() -> {
+            if (!StringUtils.hasText(token)) {
+                return Mono.error(new TokenException(
+                        "用于内省的令牌不能为空"
+                ));
+            }
+
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("token", token);
+            formData.add("token_type_hint", tokenType);
+            formData.add("client_id", properties.getClientId());
+
+            if (StringUtils.hasText(properties.getClientSecret())) {
+                formData.add("client_secret", properties.getClientSecret());
+            }
+
+            String introspectUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
+                    .path(properties.getEndpoints().getIntrospectionUri())
+                    .build()
+                    .toUriString();
+
+            log.debug("正在内省令牌: {}", introspectUrl);
+
+            WebClient webClient = ssoClient.getOAuthWebClient();
+
+            return webClient
+                    .post()
+                    .uri(introspectUrl)
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .header("Accept", "application/json")
+                    .body(BodyInserters.fromFormData(formData))
+                    .retrieve()
+                    .bodyToMono(OAuthIntrospection.class)
+                    .onErrorMap(error -> {
+                        log.error("内省令牌失败: {}", error.getMessage());
+                        if (error instanceof TokenException tokenException) {
+                            return tokenException;
+                        }
+                        return new TokenException(
+                                SsoErrorCode.INTROSPECTION_FAILED,
+                                "内省令牌失败: " + error.getMessage(),
+                                error,
+                                null
+                        );
+                    });
+        });
+    }
+
+    /**
+     * 验证令牌有效性
+     *
+     * @param token 要验证的令牌
+     * @return 如果令牌有效返回 {@code true}，否则返回 {@code false}
+     */
+    public Mono<Boolean> validateToken(String token) {
+        return validateToken(token, "access_token");
+    }
+
+    /**
+     * 验证令牌有效性（指定令牌类型）
+     *
+     * @param token     要验证的令牌
+     * @param tokenType 令牌类型提示
+     * @return 如果令牌有效返回 {@code true}，否则返回 {@code false}
+     */
+    public Mono<Boolean> validateToken(String token, String tokenType) {
+        return this.introspectToken(token, tokenType)
+                .map(OAuthIntrospection::isActive)
+                .onErrorResume(error -> {
+                    log.warn("令牌验证失败: {}", error.getMessage());
+                    return Mono.just(false);
+                });
     }
 
     /**

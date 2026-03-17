@@ -1,4 +1,4 @@
-package com.frontleaves.phalanx.beacon.sso.sdk.base.client;
+package com.frontleaves.phalanx.beacon.sso.sdk.base.api;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
 import reactor.core.publisher.Mono;
