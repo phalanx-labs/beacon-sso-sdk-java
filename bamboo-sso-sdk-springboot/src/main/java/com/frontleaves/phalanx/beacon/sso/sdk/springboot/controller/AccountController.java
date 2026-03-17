@@ -15,6 +15,7 @@ import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
 import com.xlf.utility.mvc.ResultUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -30,8 +31,18 @@ import java.util.Optional;
 /**
  * 账户相关控制器
  * <p>
- * 提供邮箱注册、密码登录与修改密码的 HTTP 端点。
+ * 提供用户账户管理的 HTTP 端点，包括邮箱注册、密码登录、修改密码和注销登出。
+ * 所有请求体参数均通过 Jakarta Validation 注解进行自动校验，
+ * 校验失败时由 {@link com.frontleaves.phalanx.beacon.sso.sdk.springboot.exception.GlobalExceptionHandler} 统一处理。
  * </p>
+ *
+ * <p><b>端点列表：</b></p>
+ * <ul>
+ *   <li>POST /account/register/email - 通过邮箱注册新用户</li>
+ *   <li>POST /account/login/password - 通过用户名和密码登录</li>
+ *   <li>POST /account/password/change - 修改用户密码</li>
+ *   <li>POST /account/logout - 注销当前用户（撤销 Token）</li>
+ * </ul>
  *
  * @author xiao_lfeng
  * @since 0.0.1
@@ -46,28 +57,20 @@ public class AccountController {
 
     /**
      * 邮箱注册
+     * <p>
+     * 通过邮箱地址和验证码注册新用户。验证码需预先通过
+     * {@code POST /public/register/email/code} 端点获取。
+     * 可选提供用户名和昵称，若未提供则由服务端自动生成。
+     * </p>
      *
-     * @param request 请求体
-     * @return 注册响应
+     * @param request 邮箱注册请求体，包含邮箱、验证码和密码等必填信息
+     * @return 注册成功的响应，包含用户 ID 和初始 Token
      */
     @PostMapping("/register/email")
     public ResponseEntity<BaseResponse<RegisterByEmail>> registerByEmail(
-            @RequestBody RegisterByEmailRequest request
+            @RequestBody @Valid RegisterByEmailRequest request
     ) {
         log.info("处理邮箱注册请求");
-
-        if (request == null) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少请求体", null);
-        }
-        if (!StringUtils.hasText(request.getEmail())) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少邮箱地址", null);
-        }
-        if (!StringUtils.hasText(request.getCode())) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少验证码", null);
-        }
-        if (!StringUtils.hasText(request.getPassword())) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少密码", null);
-        }
 
         com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RegisterByEmailRequest.Builder builder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RegisterByEmailRequest.newBuilder()
                 .setEmail(request.getEmail())
@@ -93,28 +96,20 @@ public class AccountController {
 
     /**
      * 密码登录
+     * <p>
+     * 通过用户名（或邮箱/手机号）和密码进行登录认证。
+     * 登录成功后返回访问令牌（access_token）和可选的刷新令牌（refresh_token）。
+     * 可选提供客户端 IP 和 User-Agent 信息，用于服务端安全审计。
+     * </p>
      *
-     * @param request 请求体
-     * @return 登录响应
+     * @param request 密码登录请求体，包含用户名、密码和授权范围
+     * @return 登录成功的响应，包含访问令牌、令牌类型、过期时间等信息
      */
     @PostMapping("/login/password")
     public ResponseEntity<BaseResponse<PasswordLogin>> passwordLogin(
-            @RequestBody PasswordLoginRequest request
+            @RequestBody @Valid PasswordLoginRequest request
     ) {
         log.info("处理密码登录请求");
-
-        if (request == null) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少请求体", null);
-        }
-        if (!StringUtils.hasText(request.getUsername())) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少用户名", null);
-        }
-        if (!StringUtils.hasText(request.getPassword())) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少密码", null);
-        }
-        if (!StringUtils.hasText(request.getScope())) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少作用域", null);
-        }
 
         com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.PasswordLoginRequest.Builder builder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.PasswordLoginRequest.newBuilder()
                 .setUsername(request.getUsername())
@@ -140,23 +135,19 @@ public class AccountController {
 
     /**
      * 修改密码
+     * <p>
+     * 修改指定用户的登录密码。必须提供用户 ID 和新密码，
+     * 旧密码为可选字段（取决于服务端配置是否要求验证旧密码）。
+     * </p>
      *
-     * @param request 请求体
-     * @return 修改响应
+     * @param request 修改密码请求体，包含用户 ID、新密码和可选的旧密码
+     * @return 修改密码的结果响应
      */
     @PostMapping("/password/change")
-    public ResponseEntity<BaseResponse<Void>> changePassword(@RequestBody ChangePasswordRequest request) {
+    public ResponseEntity<BaseResponse<Void>> changePassword(
+            @RequestBody @Valid ChangePasswordRequest request
+    ) {
         log.info("处理修改密码请求");
-
-        if (request == null) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少请求体", null);
-        }
-        if (!StringUtils.hasText(request.getUserId())) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少用户 ID", null);
-        }
-        if (!StringUtils.hasText(request.getNewPassword())) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少新密码", null);
-        }
 
         com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.ChangePasswordRequest.Builder builder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.ChangePasswordRequest.newBuilder()
                 .setUserId(request.getUserId())
@@ -178,12 +169,14 @@ public class AccountController {
     /**
      * 注销（登出）
      * <p>
-     * 撤销当前用户的访问令牌。支持通过 Authorization 请求头或请求属性获取 Token。
+     * 撤销当前用户的访问令牌，使当前会话失效。
+     * 支持通过 Authorization 请求头或请求属性（Filter 注入）获取 Token。
+     * 可选通过请求体指定 Token 类型提示（{@code tokenTypeHint}），用于精确指定撤销的令牌类型。
      * </p>
      *
-     * @param authorization Authorization 请求头
-     * @param request      请求体（可选，包含 tokenTypeHint）
-     * @param httpRequest  HTTP 请求对象
+     * @param authorization Authorization 请求头中的 Bearer Token（可选）
+     * @param request      注销请求体（可选，包含 tokenTypeHint）
+     * @param httpRequest  HTTP 请求对象，用于获取 Filter 注入的 Token
      * @return 注销结果响应
      */
     @PostMapping("/logout")

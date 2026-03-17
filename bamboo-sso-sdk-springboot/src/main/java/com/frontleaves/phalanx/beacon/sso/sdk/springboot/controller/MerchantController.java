@@ -33,8 +33,18 @@ import java.util.List;
 /**
  * 商户信息控制器
  * <p>
- * 提供商户标签查询、用户标签查询、公告获取等 HTTP 端点。
+ * 提供商户相关的信息查询 HTTP 端点，包括标签管理、用户标签检查和公告获取。
+ * 通过 gRPC 与 SSO 服务通信获取商户数据。
  * </p>
+ *
+ * <p><b>端点列表：</b></p>
+ * <ul>
+ *   <li>GET /merchant/tags - 获取商户标签列表</li>
+ *   <li>GET /merchant/users/{userId}/tags - 获取指定用户的标签列表</li>
+ *   <li>GET /merchant/users/{userId}/tags/{tagCode}/check - 检查用户是否拥有指定标签</li>
+ *   <li>GET /merchant/announcements - 获取最近公告列表</li>
+ *   <li>GET /merchant/announcements/{announcementId} - 获取单个公告详情</li>
+ * </ul>
  *
  * @author xiao_lfeng
  * @since 0.0.1

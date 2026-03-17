@@ -5,10 +5,10 @@ import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.SendRegi
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
 import com.xlf.utility.mvc.ResultUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,8 +17,15 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 公开接口控制器
  * <p>
- * 提供无需用户认证的公开 HTTP 端点，如发送注册验证码。
+ * 提供无需用户认证的公开 HTTP 端点，如发送注册验证码等。
+ * 所有请求体参数均通过 Jakarta Validation 注解进行自动校验，
+ * 校验失败时由 {@link com.frontleaves.phalanx.beacon.sso.sdk.springboot.exception.GlobalExceptionHandler} 统一处理。
  * </p>
+ *
+ * <p><b>端点列表：</b></p>
+ * <ul>
+ *   <li>POST /public/register/email/code - 向指定邮箱发送注册验证码</li>
+ * </ul>
  *
  * @author xiao_lfeng
  * @since 0.0.1
@@ -35,23 +42,17 @@ public class PublicController {
      * 发送注册邮箱验证码
      * <p>
      * 向指定邮箱地址发送注册验证码，用于后续的邮箱注册流程。
+     * 验证码具有时效性，过期后需重新请求发送。
      * </p>
      *
-     * @param request 请求体，包含目标邮箱地址
+     * @param request 发送验证码请求体，包含目标邮箱地址
      * @return 发送结果响应
      */
     @PostMapping("/register/email/code")
     public ResponseEntity<BaseResponse<Void>> sendRegisterEmailCode(
-            @RequestBody SendRegisterEmailCodeRequest request
+            @RequestBody @Valid SendRegisterEmailCodeRequest request
     ) {
         log.info("处理发送注册邮箱验证码请求");
-
-        if (request == null) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少请求体", null);
-        }
-        if (!StringUtils.hasText(request.getEmail())) {
-            return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少邮箱地址", null);
-        }
 
         com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.SendRegisterEmailCodeRequest grpcRequest = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.SendRegisterEmailCodeRequest.newBuilder()
                 .setEmail(request.getEmail())
