@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class CheckUserHasTagRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -4890930649558557562L;
 
     /**
      * 用户 ID

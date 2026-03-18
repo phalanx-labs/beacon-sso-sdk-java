@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class GetUserByIdRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2478018387231645891L;
 
     /**
      * 用户 ID

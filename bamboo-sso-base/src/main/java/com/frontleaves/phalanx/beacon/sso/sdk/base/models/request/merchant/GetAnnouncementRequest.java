@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class GetAnnouncementRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -450818241313615434L;
 
     /**
      * 公告 ID

@@ -5,11 +5,10 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.api.http.SsoHttpUserClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.SsoConfigurationException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.user.GetUserByIdRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.common.RoleResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserDetailResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserinfoResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.GrpcModelConverter;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.GrpcUserConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -33,8 +32,6 @@ public class SsoUserApi {
     private final BeaconSsoProperties properties;
     private final SsoGrpcUserClient grpcClient;
     private final SsoHttpUserClient httpClient;
-    private final GrpcModelConverter converter;
-    private final GrpcUserConverter userConverter;
 
     /**
      * 获取当前用户信息（双传输：gRPC 优先，HTTP 回退）
@@ -53,7 +50,14 @@ public class SsoUserApi {
             // 调用 gRPC 客户端并转换响应
             return Mono.fromCallable(() -> {
                 var response = grpcClient.getCurrentUser(accessToken, grpcRequest);
-                return userConverter.convert(response.getUser());
+                var user = response.getUser();
+                return UserinfoResult.builder()
+                        .sub(user.getId())
+                        .name(user.getNickname())
+                        .email(user.hasEmail() ? user.getEmail() : null)
+                        .emailVerified(user.getIsEmailVerified())
+                        .picture(user.hasAvatar() ? user.getAvatar() : null)
+                        .build();
             });
         }
         log.debug("[聚合层] 使用 HTTP 获取当前用户信息");
@@ -87,9 +91,32 @@ public class SsoUserApi {
 
         // 调用 gRPC 客户端
         var response = grpcClient.getUserByID(accessToken, grpcRequest);
+        var user = response.getUser();
 
         // Protobuf Response → SDK Result
-        return converter.toUserDetail(response.getUser());
+        return UserDetailResult.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .email(user.hasEmail() ? user.getEmail() : null)
+                .emailVerified(user.getIsEmailVerified())
+                .avatar(user.hasAvatar() ? user.getAvatar() : null)
+                .phone(user.hasPhone() ? user.getPhone() : null)
+                .phoneVerified(user.getIsPhoneVerified())
+                .gender(user.getGender())
+                .birthday(user.hasBirthday() ? user.getBirthday() : null)
+                .status(user.getStatus())
+                .needResetPassword(user.getNeedResetPassword())
+                .lastLoginAt(user.hasLastLoginAt() ? user.getLastLoginAt() : null)
+                .lastLoginIp(user.hasLastLoginIp() ? user.getLastLoginIp() : null)
+                .roles(user.getRolesList().stream()
+                        .map(role -> RoleResult.builder()
+                                .code(role.getCode())
+                                .name(role.getName())
+                                .description(role.hasDescription() ? role.getDescription() : null)
+                                .build())
+                        .toList())
+                .build();
     }
 
     /**

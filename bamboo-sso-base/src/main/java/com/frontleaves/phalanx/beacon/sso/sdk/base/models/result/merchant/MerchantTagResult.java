@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class MerchantTagResult implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4560639013237364285L;
 
     /**
      * 标签 ID

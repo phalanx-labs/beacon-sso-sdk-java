@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class RegisterEmailRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 797088222042524760L;
 
     /**
      * 邮箱地址

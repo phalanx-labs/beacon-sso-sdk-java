@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class RevokeTokenRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1226008798638719932L;
 
     /**
      * 要撤销的令牌

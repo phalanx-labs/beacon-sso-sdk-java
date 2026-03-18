@@ -12,6 +12,7 @@ import java.io.Serializable;
  * 获取商户标签请求 DTO
  * <p>
  * 封装获取商户标签所需的参数。
+ * 商户信息从 App 凭证中获取，无需手动指定商户 ID。
  * </p>
  *
  * @author xiao_lfeng
@@ -24,10 +25,10 @@ import java.io.Serializable;
 public class GetMerchantTagsRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -6168980284939071143L;
 
     /**
-     * 商户 ID
+     * 是否仅返回启用的标签
      */
-    private String merchantId;
+    private Boolean enabledOnly;
 }

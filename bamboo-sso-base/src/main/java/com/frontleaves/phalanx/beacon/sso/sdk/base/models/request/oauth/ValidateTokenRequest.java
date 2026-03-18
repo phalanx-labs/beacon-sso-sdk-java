@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class ValidateTokenRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -2938933523915040039L;
 
     /**
      * 要验证的令牌

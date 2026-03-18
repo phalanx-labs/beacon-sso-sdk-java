@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class LoginResult implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7835033632719031175L;
 
     /**
      * 访问令牌

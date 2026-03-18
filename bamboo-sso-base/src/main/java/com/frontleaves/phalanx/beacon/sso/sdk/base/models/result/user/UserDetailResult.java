@@ -26,7 +26,7 @@ import java.util.List;
 public class UserDetailResult implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 787235007087474405L;
 
     /**
      * 用户 ID

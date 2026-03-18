@@ -109,7 +109,7 @@ public class SsoHttpOAuthClient {
      * @return 授权 URL 字符串
      */
     private String buildAuthorizationUrl(String state, String codeChallenge, String scope) {
-        return UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
+        return UriComponentsBuilder.fromUriString(properties.getBaseUrl())
                 .path(properties.getEndpoints().getAuthUri())
                 .queryParam("response_type", "code")
                 .queryParam("client_id", properties.getClientId())
@@ -145,7 +145,7 @@ public class SsoHttpOAuthClient {
                 formData.add("client_secret", properties.getClientSecret());
             }
 
-            String revokeUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
+            String revokeUrl = UriComponentsBuilder.fromUriString(properties.getBaseUrl())
                     .path(properties.getEndpoints().getRevocationUri())
                     .build()
                     .toUriString();
@@ -209,7 +209,7 @@ public class SsoHttpOAuthClient {
                 formData.add("client_secret", properties.getClientSecret());
             }
 
-            String tokenUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
+            String tokenUrl = UriComponentsBuilder.fromUriString(properties.getBaseUrl())
                     .path(properties.getEndpoints().getTokenUri())
                     .build()
                     .toUriString();
@@ -269,7 +269,7 @@ public class SsoHttpOAuthClient {
                 formData.add("client_secret", properties.getClientSecret());
             }
 
-            String tokenUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
+            String tokenUrl = UriComponentsBuilder.fromUriString(properties.getBaseUrl())
                     .path(properties.getEndpoints().getTokenUri())
                     .build()
                     .toUriString();

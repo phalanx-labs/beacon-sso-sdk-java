@@ -7,6 +7,7 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoOAuthApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoPublicApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoUserApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.UserinfoClient;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.config.AutoConfiguration;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.InjectDataAspect;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.PermissionAspect;
@@ -57,7 +58,7 @@ import org.springframework.context.annotation.Import;
 @ConditionalOnProperty(prefix = "beacon.sso", name = "enabled", havingValue = "true", matchIfMissing = true)
 @Import({
         BeaconSsoCacheConfiguration.class,
-        com.frontleaves.phalanx.beacon.sso.sdk.base.config.BeaconSsoAutoConfiguration.class
+        AutoConfiguration.class
 })
 public class BeaconSsoSpringBootAutoConfiguration {
 

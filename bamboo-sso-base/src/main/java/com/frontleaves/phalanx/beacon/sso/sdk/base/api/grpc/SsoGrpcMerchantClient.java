@@ -16,6 +16,7 @@ import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.MerchantServiceGrpc;
 import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 
 /**
  * SSO gRPC 商户服务客户端
@@ -31,8 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SsoGrpcMerchantClient {
 
-    private final ManagedChannel channel;
     private final BeaconSsoProperties properties;
+    private final ManagedChannel channel;
 
     /**
      * 获取商户标签列表
@@ -40,7 +41,7 @@ public class SsoGrpcMerchantClient {
      * @param request protobuf 标签查询请求
      * @return protobuf 标签列表响应
      */
-    public GetMerchantTagsResponse getMerchantTags(GetMerchantTagsRequest request) {
+    public GetMerchantTagsResponse getMerchantTags(@NonNull GetMerchantTagsRequest request) {
         log.debug("[gRPC] 获取商户标签列表");
 
         var stub = GrpcUtil.attachAppHeaders(
@@ -58,7 +59,7 @@ public class SsoGrpcMerchantClient {
      * @param request protobuf 用户标签查询请求
      * @return protobuf 用户标签列表响应
      */
-    public GetUserTagsResponse getUserTags(GetUserTagsRequest request) {
+    public GetUserTagsResponse getUserTags(@NonNull GetUserTagsRequest request) {
         log.debug("[gRPC] 获取用户标签列表: userId={}", request.getUserId());
 
         var stub = GrpcUtil.attachAppHeaders(
@@ -76,7 +77,7 @@ public class SsoGrpcMerchantClient {
      * @param request protobuf 标签检查请求
      * @return protobuf 检查结果响应
      */
-    public CheckUserHasTagResponse checkUserHasTag(CheckUserHasTagRequest request) {
+    public CheckUserHasTagResponse checkUserHasTag(@NonNull CheckUserHasTagRequest request) {
         log.debug("[gRPC] 检查用户标签: userId={}, tagCode={}", request.getUserId(), request.getTagCode());
 
         var stub = GrpcUtil.attachAppHeaders(
@@ -94,7 +95,7 @@ public class SsoGrpcMerchantClient {
      * @param request protobuf 公告查询请求
      * @return protobuf 公告列表响应
      */
-    public GetRecentAnnouncementsResponse getRecentAnnouncements(GetRecentAnnouncementsRequest request) {
+    public GetRecentAnnouncementsResponse getRecentAnnouncements(@NonNull GetRecentAnnouncementsRequest request) {
         log.debug("[gRPC] 获取最近公告列表");
 
         var stub = GrpcUtil.attachAppHeaders(
@@ -112,7 +113,7 @@ public class SsoGrpcMerchantClient {
      * @param request protobuf 公告查询请求
      * @return protobuf 公告详情响应
      */
-    public GetAnnouncementResponse getAnnouncement(GetAnnouncementRequest request) {
+    public GetAnnouncementResponse getAnnouncement(@NonNull GetAnnouncementRequest request) {
         log.debug("[gRPC] 获取公告详情: announcementId={}", request.getAnnouncementId());
 
         var stub = GrpcUtil.attachAppHeaders(

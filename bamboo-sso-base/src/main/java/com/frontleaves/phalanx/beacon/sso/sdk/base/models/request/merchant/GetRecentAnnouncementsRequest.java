@@ -24,10 +24,15 @@ import java.io.Serializable;
 public class GetRecentAnnouncementsRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -2497483929024998560L;
 
     /**
      * 限制数量（可选）
      */
     private Integer limit;
+
+    /**
+     * 是否仅返回未过期的公告
+     */
+    private Boolean activeOnly;
 }

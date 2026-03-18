@@ -1,16 +1,10 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.api.http;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.api.UserinfoClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.SsoConfigurationException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserinfoResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
 import org.springframework.http.HttpHeaders;
@@ -24,14 +18,13 @@ import reactor.core.publisher.Mono;
  * <p>
  * 封装用户相关操作，通过 HTTP 协议与 SSO 服务通信。
  * 作为 gRPC 不可用时的回退实现。
- * 实现 {@link UserinfoClient} 接口。
  * </p>
  *
  * @author xiao_lfeng
  * @since 0.0.1
  */
 @Slf4j
-public class SsoHttpUserClient implements UserinfoClient {
+public class SsoHttpUserClient {
 
     private final BeaconSsoProperties properties;
     private final WebClient ssoWebClient;
@@ -40,7 +33,7 @@ public class SsoHttpUserClient implements UserinfoClient {
      * 构造函数
      *
      * @param beaconSsoProperties SSO 配置属性
-     * @param ssoWebClient           已配置的 WebClient 实例
+     * @param ssoWebClient        已配置的 WebClient 实例
      * @throws SsoConfigurationException 如果配置无效
      */
     @Contract("null, _ -> fail; !null, null -> fail")
@@ -68,7 +61,6 @@ public class SsoHttpUserClient implements UserinfoClient {
      * @param accessToken 访问令牌
      * @return UserinfoResult 用户信息
      */
-    @Override
     public Mono<UserinfoResult> getUserinfo(String accessToken) {
         return getUserinfoSdk(accessToken);
     }
@@ -102,14 +94,7 @@ public class SsoHttpUserClient implements UserinfoClient {
                     .uri(userinfoUrl)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                     .retrieve()
-                    .bodyToMono(UserinfoResponseDto.class)
-                    .map(dto -> UserinfoResult.builder()
-                            .sub(dto.sub)
-                            .name(dto.name)
-                            .email(dto.email)
-                            .emailVerified(dto.emailVerified)
-                            .picture(dto.picture)
-                            .build())
+                    .bodyToMono(UserinfoResult.class)
                     .onErrorMap(error -> {
                         log.error("[HTTP] 获取用户信息失败: {}", error.getMessage());
                         if (error instanceof TokenException) {
@@ -123,20 +108,5 @@ public class SsoHttpUserClient implements UserinfoClient {
                         );
                     });
         });
-    }
-
-    // ========== 内部 DTO 类 ==========
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    private static class UserinfoResponseDto {
-        private String sub;
-        private String name;
-        private String email;
-        @JsonProperty("email_verified")
-        private Boolean emailVerified;
-        private String picture;
     }
 }

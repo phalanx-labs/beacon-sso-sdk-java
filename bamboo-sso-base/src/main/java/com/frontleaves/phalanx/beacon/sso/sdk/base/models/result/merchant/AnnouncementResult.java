@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class AnnouncementResult implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -4138504412133989110L;
 
     /**
      * 公告 ID

@@ -5,7 +5,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.PropertySource;
 
 /**
  * Beacon SSO 自动配置类
@@ -22,8 +21,8 @@ import org.springframework.context.annotation.PropertySource;
  * <p>
  * 加载顺序：
  * <ol>
- *   <li>{@link BeaconSsoClientConfiguration} — SsoWebClient（WebClient）</li>
- *   <li>{@link BeaconSsoGrpcConfiguration} — gRPC 通道 + SsoGrpcClient + gRPC API 实现（条件加载）</li>
+ *   <li>{@link ClientConfiguration} — SsoWebClient（WebClient）</li>
+ *   <li>{@link GrpcConfiguration} — gRPC 通道 + SsoGrpcClient + gRPC API 实现（条件加载）</li>
  * </ol>
  * </p>
  *
@@ -34,10 +33,10 @@ import org.springframework.context.annotation.PropertySource;
 @ConditionalOnProperty(prefix = "beacon.sso", name = "enabled", matchIfMissing = true)
 @EnableConfigurationProperties(BeaconSsoProperties.class)
 @Import({
-        BeaconSsoClientConfiguration.class,
-        BeaconSsoGrpcConfiguration.class,
+        ClientConfiguration.class,
+        GrpcConfiguration.class,
 })
-public class BeaconSsoAutoConfiguration {
+public class AutoConfiguration {
 
     /**
      * 默认构造函数
@@ -45,7 +44,7 @@ public class BeaconSsoAutoConfiguration {
      * 主配置类，通过 @Import 注解自动加载各子配置模块。
      * </p>
      */
-    public BeaconSsoAutoConfiguration() {
+    public AutoConfiguration() {
         // 配置类初始化完成
     }
 }

@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class RegisterResult implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -2513586524065190962L;
 
     /**
      * 用户 ID

@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class RoleResult implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1201550389308211843L;
 
     /**
      * 角色代码

@@ -11,7 +11,7 @@ import java.io.Serializable;
 /**
  * 修改密码请求 DTO
  * <p>
- * 封装修改密码所需的参数，包括旧密码和新密码。
+ * 封装修改密码所需的参数，包括用户 ID、旧密码和新密码。
  * </p>
  *
  * @author xiao_lfeng
@@ -24,7 +24,12 @@ import java.io.Serializable;
 public class ChangePasswordRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -3008162351573572541L;
+
+    /**
+     * 用户 ID（必须）
+     */
+    private String userId;
 
     /**
      * 旧密码

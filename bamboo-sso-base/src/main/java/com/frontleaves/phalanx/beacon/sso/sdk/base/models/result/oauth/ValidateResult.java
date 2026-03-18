@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class ValidateResult implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5102280801078409745L;
 
     /**
      * 令牌是否有效

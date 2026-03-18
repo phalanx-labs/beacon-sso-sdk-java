@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class IntrospectResult implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7709533716059169342L;
 
     /**
      * 令牌是否有效

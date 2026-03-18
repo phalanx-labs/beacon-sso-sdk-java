@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 0.0.1
  */
 @Configuration
-public class BeaconSsoClientConfiguration {
+public class ClientConfiguration {
 
     /**
      * 创建 SsoWebClient Bean

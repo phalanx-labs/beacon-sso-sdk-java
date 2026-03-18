@@ -2,12 +2,12 @@ package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoAccountApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoHeaderConstants;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoLoginResult;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoRegisterResult;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.ChangePasswordRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.PasswordLoginRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.RevokeTokenRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.RegisterByEmailRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.ChangePasswordRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.PasswordLoginRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.RegisterEmailRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.RevokeTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.account.LoginResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.account.RegisterResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.RegisterByEmail;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.PasswordLogin;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.utility.SsoSecurityUtil;
@@ -19,7 +19,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -68,23 +67,20 @@ public class AccountController {
      */
     @PostMapping("/register/email")
     public ResponseEntity<BaseResponse<RegisterByEmail>> registerByEmail(
-            @RequestBody @Valid RegisterByEmailRequest request
+            @RequestBody @Valid com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.RegisterByEmailRequest request
     ) {
         log.info("处理邮箱注册请求");
 
-        com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RegisterByEmailRequest.Builder builder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RegisterByEmailRequest.newBuilder()
-                .setEmail(request.getEmail())
-                .setCode(request.getCode())
-                .setPassword(request.getPassword());
-        if (StringUtils.hasText(request.getUsername())) {
-            builder.setUsername(request.getUsername());
-        }
-        if (StringUtils.hasText(request.getNickname())) {
-            builder.setNickname(request.getNickname());
-        }
+        // 构建 SDK Request
+        RegisterEmailRequest sdkRequest = RegisterEmailRequest.builder()
+                .email(request.getEmail())
+                .password(request.getPassword())
+                .username(request.getUsername())
+                .verifyCode(request.getCode())
+                .build();
 
         try {
-            SsoRegisterResult response = ssoAccountApi.registerByEmail(builder.build());
+            RegisterResult response = ssoAccountApi.registerByEmail(sdkRequest);
             RegisterByEmail data = this.toRegisterResponse(response);
             return ResultUtil.success("注册成功", data);
         } catch (Exception e) {
@@ -107,23 +103,21 @@ public class AccountController {
      */
     @PostMapping("/login/password")
     public ResponseEntity<BaseResponse<PasswordLogin>> passwordLogin(
-            @RequestBody @Valid PasswordLoginRequest request
+            @RequestBody @Valid com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.PasswordLoginRequest request
     ) {
         log.info("处理密码登录请求");
 
-        com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.PasswordLoginRequest.Builder builder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.PasswordLoginRequest.newBuilder()
-                .setUsername(request.getUsername())
-                .setPassword(request.getPassword())
-                .setScope(request.getScope());
-        if (StringUtils.hasText(request.getClientIp())) {
-            builder.setClientIp(request.getClientIp());
-        }
-        if (StringUtils.hasText(request.getUserAgent())) {
-            builder.setUserAgent(request.getUserAgent());
-        }
+        // 构建 SDK Request
+        PasswordLoginRequest sdkRequest = PasswordLoginRequest.builder()
+                .username(request.getUsername())
+                .password(request.getPassword())
+                .scope(request.getScope())
+                .clientIp(request.getClientIp())
+                .userAgent(request.getUserAgent())
+                .build();
 
         try {
-            SsoLoginResult response = ssoAccountApi.passwordLogin(builder.build());
+            LoginResult response = ssoAccountApi.passwordLogin(sdkRequest);
             PasswordLogin data = this.toLoginResponse(response);
             return ResultUtil.success("登录成功", data);
         } catch (Exception e) {
@@ -145,19 +139,19 @@ public class AccountController {
      */
     @PostMapping("/password/change")
     public ResponseEntity<BaseResponse<Void>> changePassword(
-            @RequestBody @Valid ChangePasswordRequest request
+            @RequestBody @Valid com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.ChangePasswordRequest request
     ) {
         log.info("处理修改密码请求");
 
-        com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.ChangePasswordRequest.Builder builder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.ChangePasswordRequest.newBuilder()
-                .setUserId(request.getUserId())
-                .setNewPassword(request.getNewPassword());
-        if (StringUtils.hasText(request.getOldPassword())) {
-            builder.setOldPassword(request.getOldPassword());
-        }
+        // 构建 SDK Request
+        ChangePasswordRequest sdkRequest = ChangePasswordRequest.builder()
+                .userId(request.getUserId())
+                .oldPassword(request.getOldPassword())
+                .newPassword(request.getNewPassword())
+                .build();
 
         try {
-            ssoAccountApi.changePassword(builder.build());
+            ssoAccountApi.changePassword(sdkRequest);
             return ResultUtil.success("修改密码成功", null);
         } catch (Exception e) {
             log.warn("Change password failed: {}", e.getMessage(), e);
@@ -182,13 +176,13 @@ public class AccountController {
     @PostMapping("/logout")
     public ResponseEntity<BaseResponse<Void>> revokeToken(
             @RequestHeader(value = SsoHeaderConstants.AUTHORIZATION, required = false) String authorization,
-            @RequestBody(required = false) RevokeTokenRequest request,
+            @RequestBody(required = false) com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.RevokeTokenRequest request,
             HttpServletRequest httpRequest
     ) {
         log.info("处理注销令牌请求");
 
         // 获取 access token：优先从 header 获取，其次从请求属性获取
-        Optional<String> tokenOpt = Optional.ofNullable(authorization).filter(StringUtils::hasText);
+        Optional<String> tokenOpt = Optional.ofNullable(authorization).filter(s -> s != null && !s.isBlank());
         if (tokenOpt.isEmpty()) {
             tokenOpt = SsoSecurityUtil.getCurrentToken(httpRequest);
         }
@@ -197,13 +191,14 @@ public class AccountController {
         }
 
         String accessToken = tokenOpt.get();
-        com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RevokeTokenRequest.Builder revokeTokenRequestBuilder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RevokeTokenRequest.newBuilder();
-        if (request != null && StringUtils.hasText(request.getTokenTypeHint())) {
-            revokeTokenRequestBuilder.setTokenTypeHint(request.getTokenTypeHint());
-        }
+
+        // 构建 SDK Request
+        RevokeTokenRequest sdkRequest = RevokeTokenRequest.builder()
+                .tokenType(request != null ? request.getTokenTypeHint() : null)
+                .build();
 
         try {
-            ssoAccountApi.revokeToken(accessToken, revokeTokenRequestBuilder.build());
+            ssoAccountApi.revokeToken(accessToken, sdkRequest);
             return ResultUtil.success("注销成功", null);
         } catch (Exception e) {
             log.warn("Revoke token failed: {}", e.getMessage(), e);
@@ -212,7 +207,7 @@ public class AccountController {
         }
     }
 
-    private RegisterByEmail toRegisterResponse(SsoRegisterResult response) {
+    private RegisterByEmail toRegisterResponse(RegisterResult response) {
         if (response == null) {
             return null;
         }
@@ -222,7 +217,7 @@ public class AccountController {
                 .build();
     }
 
-    private PasswordLogin toLoginResponse(SsoLoginResult response) {
+    private PasswordLogin toLoginResponse(LoginResult response) {
         if (response == null) {
             return null;
         }

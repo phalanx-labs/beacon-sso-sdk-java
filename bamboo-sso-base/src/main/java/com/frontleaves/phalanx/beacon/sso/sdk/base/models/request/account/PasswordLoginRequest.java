@@ -11,7 +11,7 @@ import java.io.Serializable;
 /**
  * 密码登录请求 DTO
  * <p>
- * 封装密码登录所需的参数，包括用户名和密码。
+ * 封装密码登录所需的参数，包括用户名、密码和可选的客户端信息。
  * </p>
  *
  * @author xiao_lfeng
@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class PasswordLoginRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -899925074585425347L;
 
     /**
      * 用户名
@@ -35,4 +35,19 @@ public class PasswordLoginRequest implements Serializable {
      * 密码
      */
     private String password;
+
+    /**
+     * 授权范围
+     */
+    private String scope;
+
+    /**
+     * 客户端 IP
+     */
+    private String clientIp;
+
+    /**
+     * User-Agent
+     */
+    private String userAgent;
 }

@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class AuthorizationUrlRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -8888221171722749527L;
 
     /**
      * 状态参数（用于防止 CSRF 攻击）

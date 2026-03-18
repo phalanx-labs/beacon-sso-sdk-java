@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class SendEmailCodeRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1081404939692596386L;
 
     /**
      * 邮箱地址

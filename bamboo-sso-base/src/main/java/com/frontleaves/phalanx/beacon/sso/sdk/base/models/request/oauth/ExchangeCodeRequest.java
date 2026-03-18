@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class ExchangeCodeRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4626568785648476212L;
 
     /**
      * 授权码

@@ -14,6 +14,7 @@ import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RevokeTokenResponse;
 import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 
 /**
  * SSO gRPC 认证服务客户端
@@ -29,8 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SsoGrpcAuthClient {
 
-    private final ManagedChannel channel;
     private final BeaconSsoProperties properties;
+    private final ManagedChannel channel;
 
     /**
      * 通过邮箱注册
@@ -38,7 +39,7 @@ public class SsoGrpcAuthClient {
      * @param request protobuf 注册请求
      * @return protobuf 注册响应
      */
-    public RegisterByEmailResponse registerByEmail(RegisterByEmailRequest request) {
+    public RegisterByEmailResponse registerByEmail(@NonNull RegisterByEmailRequest request) {
         log.debug("[gRPC] 执行邮箱注册: email={}", request.getEmail());
 
         var stub = GrpcUtil.attachAppHeaders(
@@ -56,7 +57,7 @@ public class SsoGrpcAuthClient {
      * @param request protobuf 登录请求
      * @return protobuf 登录响应
      */
-    public PasswordLoginResponse passwordLogin(PasswordLoginRequest request) {
+    public PasswordLoginResponse passwordLogin(@NonNull PasswordLoginRequest request) {
         log.debug("[gRPC] 执行密码登录: username={}", request.getUsername());
 
         var stub = GrpcUtil.attachAppHeaders(
@@ -74,7 +75,7 @@ public class SsoGrpcAuthClient {
      * @param request protobuf 修改密码请求
      * @return protobuf 修改密码响应
      */
-    public ChangePasswordResponse changePassword(ChangePasswordRequest request) {
+    public ChangePasswordResponse changePassword(@NonNull ChangePasswordRequest request) {
         log.debug("[gRPC] 执行修改密码");
 
         var stub = GrpcUtil.attachAppHeaders(
@@ -93,7 +94,7 @@ public class SsoGrpcAuthClient {
      * @param request     protobuf 撤销请求
      * @return protobuf 撤销响应
      */
-    public RevokeTokenResponse revokeToken(String accessToken, RevokeTokenRequest request) {
+    public RevokeTokenResponse revokeToken(@NonNull String accessToken, @NonNull RevokeTokenRequest request) {
         log.debug("[gRPC] 执行令牌撤销");
 
         String normalizedToken = GrpcUtil.normalizeAccessToken(accessToken);

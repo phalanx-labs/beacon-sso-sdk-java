@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class AnnouncementListMetaResult implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1020159764890779908L;
 
     /**
      * MD5 哈希值

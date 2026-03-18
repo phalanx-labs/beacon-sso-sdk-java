@@ -24,7 +24,7 @@ import java.io.Serializable;
 public class IntrospectTokenRequest implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -535264115122260975L;
 
     /**
      * 要自省的令牌

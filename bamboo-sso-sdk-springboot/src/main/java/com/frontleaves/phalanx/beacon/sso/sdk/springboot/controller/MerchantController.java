@@ -1,15 +1,14 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoMerchantApi;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoAnnouncementListMeta;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoMerchantAnnouncement;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoMerchantTag;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoRecentAnnouncementsResult;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.CheckUserHasTagRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetAnnouncementRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetMerchantTagsRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetRecentAnnouncementsRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserTagsRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.CheckUserHasTagRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.GetAnnouncementRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.GetMerchantTagsRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.GetRecentAnnouncementsRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.GetUserTagsRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.AnnouncementResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.MerchantTagResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.RecentAnnouncementsResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.AnnouncementListMeta;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.RecentAnnouncements;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.MerchantAnnouncement;
@@ -20,7 +19,6 @@ import com.xlf.utility.mvc.ResultUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -71,13 +69,13 @@ public class MerchantController {
     ) {
         log.info("处理获取商户标签请求");
 
-        GetMerchantTagsRequest.Builder builder = GetMerchantTagsRequest.newBuilder();
-        if (enabledOnly != null) {
-            builder.setEnabledOnly(enabledOnly);
-        }
+        // 构建 SDK Request
+        GetMerchantTagsRequest sdkRequest = GetMerchantTagsRequest.builder()
+                .enabledOnly(enabledOnly)
+                .build();
 
         try {
-            List<SsoMerchantTag> tags = ssoMerchantApi.getMerchantTags(builder.build());
+            List<MerchantTagResult> tags = ssoMerchantApi.getMerchantTags(sdkRequest);
             List<MerchantTag> data = tags.stream()
                     .map(this::toMerchantTag)
                     .toList();
@@ -104,16 +102,17 @@ public class MerchantController {
     ) {
         log.info("Processing get user tags request: {}", userId);
 
-        if (!StringUtils.hasText(userId)) {
+        if (userId == null || userId.isBlank()) {
             return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少用户 ID", null);
         }
 
-        GetUserTagsRequest grpcRequest = GetUserTagsRequest.newBuilder()
-                .setUserId(userId)
+        // 构建 SDK Request
+        GetUserTagsRequest sdkRequest = GetUserTagsRequest.builder()
+                .userId(userId)
                 .build();
 
         try {
-            List<SsoMerchantTag> tags = ssoMerchantApi.getUserTags(grpcRequest);
+            List<MerchantTagResult> tags = ssoMerchantApi.getUserTags(sdkRequest);
             List<MerchantTag> data = tags.stream()
                     .map(this::toMerchantTag)
                     .toList();
@@ -142,20 +141,21 @@ public class MerchantController {
     ) {
         log.info("Processing check user has tag request: userId={}, tagCode={}", userId, tagCode);
 
-        if (!StringUtils.hasText(userId)) {
+        if (userId == null || userId.isBlank()) {
             return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少用户 ID", null);
         }
-        if (!StringUtils.hasText(tagCode)) {
+        if (tagCode == null || tagCode.isBlank()) {
             return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少标签代码", null);
         }
 
-        CheckUserHasTagRequest grpcRequest = CheckUserHasTagRequest.newBuilder()
-                .setUserId(userId)
-                .setTagCode(tagCode)
+        // 构建 SDK Request
+        CheckUserHasTagRequest sdkRequest = CheckUserHasTagRequest.builder()
+                .userId(userId)
+                .tagCode(tagCode)
                 .build();
 
         try {
-            boolean hasTag = ssoMerchantApi.checkUserHasTag(grpcRequest);
+            boolean hasTag = ssoMerchantApi.checkUserHasTag(sdkRequest);
             return ResultUtil.success("检查用户标签成功", hasTag);
         } catch (Exception e) {
             log.warn("Check user has tag failed: {}", e.getMessage(), e);
@@ -181,16 +181,14 @@ public class MerchantController {
     ) {
         log.info("Processing get recent announcements request");
 
-        GetRecentAnnouncementsRequest.Builder builder = GetRecentAnnouncementsRequest.newBuilder();
-        if (limit != null) {
-            builder.setLimit(limit);
-        }
-        if (activeOnly != null) {
-            builder.setActiveOnly(activeOnly);
-        }
+        // 构建 SDK Request
+        GetRecentAnnouncementsRequest sdkRequest = GetRecentAnnouncementsRequest.builder()
+                .limit(limit)
+                .activeOnly(activeOnly)
+                .build();
 
         try {
-            SsoRecentAnnouncementsResult recentResult = ssoMerchantApi.getRecentAnnouncements(builder.build());
+            RecentAnnouncementsResult recentResult = ssoMerchantApi.getRecentAnnouncements(sdkRequest);
             List<MerchantAnnouncement> announcements = recentResult.getAnnouncements() == null ? List.of() : recentResult.getAnnouncements().stream()
                     .map(this::toMerchantAnnouncement)
                     .toList();
@@ -221,16 +219,17 @@ public class MerchantController {
     ) {
         log.info("Processing get announcement request: {}", announcementId);
 
-        if (!StringUtils.hasText(announcementId)) {
+        if (announcementId == null || announcementId.isBlank()) {
             return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少公告 ID", null);
         }
 
-        GetAnnouncementRequest grpcRequest = GetAnnouncementRequest.newBuilder()
-                .setAnnouncementId(announcementId)
+        // 构建 SDK Request
+        GetAnnouncementRequest sdkRequest = GetAnnouncementRequest.builder()
+                .announcementId(announcementId)
                 .build();
 
         try {
-            SsoMerchantAnnouncement announcement = ssoMerchantApi.getAnnouncement(grpcRequest);
+            AnnouncementResult announcement = ssoMerchantApi.getAnnouncement(sdkRequest);
             MerchantAnnouncement data = this.toMerchantAnnouncement(announcement);
             return ResultUtil.success("获取公告详情成功", data);
         } catch (Exception e) {
@@ -240,7 +239,7 @@ public class MerchantController {
         }
     }
 
-    private MerchantTag toMerchantTag(SsoMerchantTag tag) {
+    private MerchantTag toMerchantTag(MerchantTagResult tag) {
         if (tag == null) {
             return null;
         }
@@ -256,7 +255,7 @@ public class MerchantController {
                 .build();
     }
 
-    private MerchantAnnouncement toMerchantAnnouncement(SsoMerchantAnnouncement announcement) {
+    private MerchantAnnouncement toMerchantAnnouncement(AnnouncementResult announcement) {
         if (announcement == null) {
             return null;
         }
@@ -270,7 +269,7 @@ public class MerchantController {
                 .build();
     }
 
-    private AnnouncementListMeta toAnnouncementListMeta(SsoAnnouncementListMeta meta) {
+    private AnnouncementListMeta toAnnouncementListMeta(com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.AnnouncementListMetaResult meta) {
         if (meta == null) {
             return null;
         }

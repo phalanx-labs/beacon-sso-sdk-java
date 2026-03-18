@@ -10,6 +10,7 @@ import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.UserServiceGrpc;
 import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 
 /**
  * SSO gRPC 用户服务客户端
@@ -25,8 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SsoGrpcUserClient {
 
-    private final ManagedChannel channel;
     private final BeaconSsoProperties properties;
+    private final ManagedChannel channel;
 
     /**
      * 获取当前用户信息
@@ -35,7 +36,7 @@ public class SsoGrpcUserClient {
      * @param request     protobuf 获取当前用户请求
      * @return protobuf 用户信息响应
      */
-    public GetCurrentUserResponse getCurrentUser(String accessToken, GetCurrentUserRequest request) {
+    public GetCurrentUserResponse getCurrentUser(@NonNull String accessToken, @NonNull GetCurrentUserRequest request) {
         log.debug("[gRPC] 获取当前用户信息");
 
         String normalizedToken = GrpcUtil.normalizeAccessToken(accessToken);
@@ -56,7 +57,7 @@ public class SsoGrpcUserClient {
      * @param request     protobuf 用户查询请求
      * @return protobuf 用户详情响应
      */
-    public GetUserByIDResponse getUserByID(String accessToken, GetUserByIDRequest request) {
+    public GetUserByIDResponse getUserByID(@NonNull String accessToken, @NonNull GetUserByIDRequest request) {
         log.debug("[gRPC] 根据 ID 获取用户信息: userId={}", request.getUserId());
 
         String normalizedToken = GrpcUtil.normalizeAccessToken(accessToken);

@@ -8,6 +8,7 @@ import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.SendRegisterEmailCodeRespo
 import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 
 /**
  * SSO gRPC 公共服务客户端
@@ -23,8 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SsoGrpcPublicClient {
 
-    private final ManagedChannel channel;
     private final BeaconSsoProperties properties;
+    private final ManagedChannel channel;
 
     /**
      * 发送注册邮箱验证码
@@ -32,7 +33,7 @@ public class SsoGrpcPublicClient {
      * @param request protobuf 验证码发送请求
      * @return protobuf 发送响应
      */
-    public SendRegisterEmailCodeResponse sendRegisterEmailCode(SendRegisterEmailCodeRequest request) {
+    public SendRegisterEmailCodeResponse sendRegisterEmailCode(@NonNull SendRegisterEmailCodeRequest request) {
         log.debug("[gRPC] 发送邮箱验证码: email={}", request.getEmail());
 
         var stub = GrpcUtil.attachAppHeaders(
