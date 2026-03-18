@@ -1,0 +1,72 @@
+package com.frontleaves.phalanx.beacon.sso.sdk.base.api.grpc;
+
+import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.GrpcUtil;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetCurrentUserRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetCurrentUserResponse;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserByIDRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserByIDResponse;
+import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.UserServiceGrpc;
+import io.grpc.ManagedChannel;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * SSO gRPC 用户服务客户端
+ * <p>
+ * 封装用户相关的 gRPC 调用，直接使用 protobuf 原生类型。
+ * 所有方法的形参和返回值均为 protobuf 生成的类型。
+ * </p>
+ *
+ * @author xiao_lfeng
+ * @since 0.0.1
+ */
+@Slf4j
+@RequiredArgsConstructor
+public class SsoGrpcUserClient {
+
+    private final ManagedChannel channel;
+    private final BeaconSsoProperties properties;
+
+    /**
+     * 获取当前用户信息
+     *
+     * @param accessToken Access Token（需要 Bearer 前缀）
+     * @param request     protobuf 获取当前用户请求
+     * @return protobuf 用户信息响应
+     */
+    public GetCurrentUserResponse getCurrentUser(String accessToken, GetCurrentUserRequest request) {
+        log.debug("[gRPC] 获取当前用户信息");
+
+        String normalizedToken = GrpcUtil.normalizeAccessToken(accessToken);
+        var stub = GrpcUtil.attachAppHeadersWithToken(
+                UserServiceGrpc.newBlockingStub(channel),
+                properties.getGrpc().getAppAccessId(),
+                properties.getGrpc().getAppSecretKey(),
+                normalizedToken
+        );
+
+        return stub.getCurrentUser(request);
+    }
+
+    /**
+     * 根据用户 ID 获取详细信息
+     *
+     * @param accessToken Access Token（需要 Bearer 前缀）
+     * @param request     protobuf 用户查询请求
+     * @return protobuf 用户详情响应
+     */
+    public GetUserByIDResponse getUserByID(String accessToken, GetUserByIDRequest request) {
+        log.debug("[gRPC] 根据 ID 获取用户信息: userId={}", request.getUserId());
+
+        String normalizedToken = GrpcUtil.normalizeAccessToken(accessToken);
+        var stub = GrpcUtil.attachAppHeadersWithToken(
+                UserServiceGrpc.newBlockingStub(channel),
+                properties.getGrpc().getAppAccessId(),
+                properties.getGrpc().getAppSecretKey(),
+                normalizedToken
+        );
+
+        return stub.getUserByID(request);
+    }
+}

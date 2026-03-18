@@ -1,12 +1,12 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.utility;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserinfoResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.User;
 
 /**
- * gRPC User → OAuthUserinfo 转换器
+ * gRPC User → UserinfoResult 转换器
  * <p>
- * 将 protobuf {@link User} 消息转换为标准 OIDC {@link OAuthUserinfo} 模型，
+ * 将 protobuf {@link User} 消息转换为标准 OIDC {@link UserinfoResult} 模型，
  * 用于 gRPC 用户信息客户端的响应转换。
  * </p>
  *
@@ -16,19 +16,18 @@ import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.User;
 public class GrpcUserConverter {
 
     /**
-     * 将 gRPC User 转换为 OAuthUserinfo
+     * 将 gRPC User 转换为 UserinfoResult
      *
      * @param user gRPC 用户消息
-     * @return OAuthUserinfo 用户信息
+     * @return UserinfoResult 用户信息
      */
-    public OAuthUserinfo convert(User user) {
-        return OAuthUserinfo.builder()
+    public UserinfoResult convert(User user) {
+        return UserinfoResult.builder()
                 .sub(user.getId())
                 .name(user.getNickname())
-                .preferredUsername(user.getUsername())
-                .email(user.getEmail())
+                .email(user.hasEmail() ? user.getEmail() : null)
                 .emailVerified(user.getIsEmailVerified())
-                .picture(user.getAvatar())
+                .picture(user.hasAvatar() ? user.getAvatar() : null)
                 .build();
     }
 }

@@ -22,9 +22,8 @@ import org.springframework.context.annotation.PropertySource;
  * <p>
  * 加载顺序：
  * <ol>
- *   <li>{@link BeaconSsoClientConfiguration} — SsoClient（WebClient）</li>
- *   <li>{@link BeaconSsoGrpcConfiguration} — gRPC 通道 + SsoRequest + gRPC API 实现（条件加载）</li>
- *   <li>{@link BeaconSsoBeanConfiguration} — SsoOAuthApi + SsoUserApi + HttpUserinfoClient（@ConditionalOnMissingBean）</li>
+ *   <li>{@link BeaconSsoClientConfiguration} — SsoWebClient（WebClient）</li>
+ *   <li>{@link BeaconSsoGrpcConfiguration} — gRPC 通道 + SsoGrpcClient + gRPC API 实现（条件加载）</li>
  * </ol>
  * </p>
  *
@@ -33,12 +32,10 @@ import org.springframework.context.annotation.PropertySource;
  */
 @Configuration
 @ConditionalOnProperty(prefix = "beacon.sso", name = "enabled", matchIfMissing = true)
-@PropertySource("classpath:beacon-sso-defaults.properties")
 @EnableConfigurationProperties(BeaconSsoProperties.class)
 @Import({
         BeaconSsoClientConfiguration.class,
         BeaconSsoGrpcConfiguration.class,
-        BeaconSsoBeanConfiguration.class
 })
 public class BeaconSsoAutoConfiguration {
 

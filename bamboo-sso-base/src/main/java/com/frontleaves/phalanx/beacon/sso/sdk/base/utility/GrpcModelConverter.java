@@ -1,6 +1,13 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.utility;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.*;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.account.LoginResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.account.RegisterResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.common.RoleResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.AnnouncementListMetaResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.AnnouncementResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.MerchantTagResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.RecentAnnouncementsResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserDetailResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.*;
 
 import java.util.List;
@@ -20,8 +27,8 @@ public class GrpcModelConverter {
     /**
      * 转换注册响应
      */
-    public SsoRegisterResult toRegisterResult(RegisterByEmailResponse response) {
-        return SsoRegisterResult.builder()
+    public RegisterResult toRegisterResult(RegisterByEmailResponse response) {
+        return RegisterResult.builder()
                 .userId(response.getUserId())
                 .token(response.getToken())
                 .build();
@@ -30,8 +37,8 @@ public class GrpcModelConverter {
     /**
      * 转换登录响应
      */
-    public SsoLoginResult toLoginResult(PasswordLoginResponse response) {
-        return SsoLoginResult.builder()
+    public LoginResult toLoginResult(PasswordLoginResponse response) {
+        return LoginResult.builder()
                 .accessToken(response.getAccessToken())
                 .tokenType(response.getTokenType())
                 .expiresIn(response.getExpiresIn())
@@ -44,19 +51,19 @@ public class GrpcModelConverter {
     /**
      * 转换用户详细信息
      */
-    public SsoUserDetail toUserDetail(User user) {
-        return SsoUserDetail.builder()
+    public UserDetailResult toUserDetail(User user) {
+        return UserDetailResult.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .nickname(user.getNickname())
                 .email(user.hasEmail() ? user.getEmail() : null)
-                .phone(user.hasPhone() ? user.getPhone() : null)
+                .emailVerified(user.getIsEmailVerified())
                 .avatar(user.hasAvatar() ? user.getAvatar() : null)
+                .phone(user.hasPhone() ? user.getPhone() : null)
+                .phoneVerified(user.getIsPhoneVerified())
                 .gender(user.getGender())
                 .birthday(user.hasBirthday() ? user.getBirthday() : null)
                 .status(user.getStatus())
-                .emailVerified(user.getIsEmailVerified())
-                .phoneVerified(user.getIsPhoneVerified())
                 .needResetPassword(user.getNeedResetPassword())
                 .lastLoginAt(user.hasLastLoginAt() ? user.getLastLoginAt() : null)
                 .lastLoginIp(user.hasLastLoginIp() ? user.getLastLoginIp() : null)
@@ -67,7 +74,7 @@ public class GrpcModelConverter {
     /**
      * 转换角色列表
      */
-    public List<SsoRole> toRoles(List<Role> roles) {
+    public List<RoleResult> toRoles(List<Role> roles) {
         return roles.stream()
                 .map(this::toRole)
                 .toList();
@@ -76,8 +83,8 @@ public class GrpcModelConverter {
     /**
      * 转换单个角色
      */
-    public SsoRole toRole(Role role) {
-        return SsoRole.builder()
+    public RoleResult toRole(Role role) {
+        return RoleResult.builder()
                 .code(role.getCode())
                 .name(role.getName())
                 .description(role.hasDescription() ? role.getDescription() : null)
@@ -87,8 +94,8 @@ public class GrpcModelConverter {
     /**
      * 转换商户标签
      */
-    public SsoMerchantTag toMerchantTag(MerchantTag tag) {
-        return SsoMerchantTag.builder()
+    public MerchantTagResult toMerchantTag(MerchantTag tag) {
+        return MerchantTagResult.builder()
                 .id(tag.getId())
                 .code(tag.getCode())
                 .name(tag.getName())
@@ -103,7 +110,7 @@ public class GrpcModelConverter {
     /**
      * 转换商户标签列表
      */
-    public List<SsoMerchantTag> toMerchantTags(List<MerchantTag> tags) {
+    public List<MerchantTagResult> toMerchantTags(List<MerchantTag> tags) {
         return tags.stream()
                 .map(this::toMerchantTag)
                 .toList();
@@ -112,8 +119,8 @@ public class GrpcModelConverter {
     /**
      * 转换商户公告
      */
-    public SsoMerchantAnnouncement toAnnouncement(MerchantAnnouncement announcement) {
-        return SsoMerchantAnnouncement.builder()
+    public AnnouncementResult toAnnouncement(MerchantAnnouncement announcement) {
+        return AnnouncementResult.builder()
                 .id(announcement.getId())
                 .title(announcement.getTitle())
                 .content(announcement.getContent())
@@ -126,7 +133,7 @@ public class GrpcModelConverter {
     /**
      * 转换商户公告列表
      */
-    public List<SsoMerchantAnnouncement> toAnnouncements(List<MerchantAnnouncement> announcements) {
+    public List<AnnouncementResult> toAnnouncements(List<MerchantAnnouncement> announcements) {
         return announcements.stream()
                 .map(this::toAnnouncement)
                 .toList();
@@ -135,8 +142,8 @@ public class GrpcModelConverter {
     /**
      * 转换公告列表元信息
      */
-    public SsoAnnouncementListMeta toAnnouncementListMeta(AnnouncementListMeta meta) {
-        return SsoAnnouncementListMeta.builder()
+    public AnnouncementListMetaResult toAnnouncementListMeta(AnnouncementListMeta meta) {
+        return AnnouncementListMetaResult.builder()
                 .md5Hash(meta.getMd5Hash())
                 .sha256Hash(meta.getSha256Hash())
                 .count(meta.getCount())
@@ -147,8 +154,8 @@ public class GrpcModelConverter {
     /**
      * 转换最近公告响应
      */
-    public SsoRecentAnnouncementsResult toRecentAnnouncementsResult(GetRecentAnnouncementsResponse response) {
-        return SsoRecentAnnouncementsResult.builder()
+    public RecentAnnouncementsResult toRecentAnnouncementsResult(GetRecentAnnouncementsResponse response) {
+        return RecentAnnouncementsResult.builder()
                 .announcements(toAnnouncements(response.getAnnouncementsList()))
                 .meta(toAnnouncementListMeta(response.getMeta()))
                 .build();

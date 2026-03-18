@@ -1,6 +1,7 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.exception;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
+import lombok.Getter;
 
 import java.io.Serial;
 
@@ -14,10 +15,11 @@ import java.io.Serial;
  * @author Xiao Lfeng &lt;xiao_lfeng@icloud.com&gt;
  * @since 1.0.0
  */
+@Getter
 public class SsoConfigurationException extends SsoException {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -678292224980844105L;
 
     /**
      * 配置项名称（可选）
@@ -118,15 +120,6 @@ public class SsoConfigurationException extends SsoException {
     public SsoConfigurationException(SsoErrorCode errorCode, String message, Throwable cause, String configKey) {
         super(errorCode, message, cause);
         this.configKey = configKey;
-    }
-
-    /**
-     * 获取配置项名称
-     *
-     * @return 配置项名称，如果未设置则返回 {@code null}
-     */
-    public String getConfigKey() {
-        return configKey;
     }
 
     /**

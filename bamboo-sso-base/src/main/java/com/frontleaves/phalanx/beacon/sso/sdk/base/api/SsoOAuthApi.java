@@ -1,27 +1,26 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.api;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthState;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthToken;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.PkceUtil;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.http.SsoHttpOAuthClient;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.RevokeTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.AuthorizationUrlRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.ExchangeCodeRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.IntrospectTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.RefreshTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.ValidateTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.AuthorizationUrlResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.IntrospectResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.TokenResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.ValidateResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.util.StringUtils;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 /**
- * OAuth 2.0 协议操作（HTTP-only）
+ * OAuth 2.0 协议聚合层（HTTP-only）
  * <p>
  * 封装 OAuth 2.0 协议相关操作，包括授权 URL 生成、授权码交换、
- * 令牌刷新、撤销、自省和验证。所有方法均通过 HTTP 协议与 SSO 服务通信。
+ * 令牌刷新、撤销、自省和验证。所有方法均委托给 {@link SsoHttpOAuthClient}，
+ * 通过 HTTP 协议与 SSO 服务通信。
  * </p>
  *
  * @author xiao_lfeng
@@ -31,305 +30,71 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class SsoOAuthApi {
 
-    private final BeaconSsoProperties properties;
-    private final SsoClient ssoClient;
+    private final SsoHttpOAuthClient httpClient;
 
     /**
-     * 生成授权 URL（默认 scope）
+     * 生成授权 URL
      *
-     * @param state         state 参数
-     * @param codeChallenge PKCE code_challenge
-     * @return 授权 URL 字符串
+     * @param request 授权 URL 请求
+     * @return 授权 URL 结果
      */
-    public String generateAuthorizationUrl(String state, String codeChallenge) {
-        return buildAuthorizationUrl(state, codeChallenge, "openid profile email");
-    }
-
-    /**
-     * 生成授权 URL（自定义 scope）
-     *
-     * @param state         state 参数
-     * @param codeChallenge PKCE code_challenge
-     * @param scope         自定义作用域
-     * @return 授权 URL 字符串
-     */
-    public String generateAuthorizationUrl(String state, String codeChallenge, String scope) {
-        return buildAuthorizationUrl(state, codeChallenge,
-                StringUtils.hasText(scope) ? scope : "openid profile email");
+    public AuthorizationUrlResult generateAuthorizationUrl(AuthorizationUrlRequest request) {
+        log.debug("[聚合层] 生成授权 URL");
+        return httpClient.generateAuthorizationUrlSdk(request);
     }
 
     /**
      * 使用授权码交换令牌
      *
-     * @param code       授权码
-     * @param oauthState 已验证的 OAuth State
-     * @return OAuthToken 令牌响应
+     * @param request 授权码交换请求
+     * @return 令牌结果
      */
-    public Mono<OAuthToken> exchangeCodeForToken(String code, OAuthState oauthState) {
-        return Mono.defer(() -> {
-            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.add("grant_type", "authorization_code");
-            formData.add("code", code);
-            formData.add("redirect_uri", oauthState.getRedirectUri());
-            formData.add("client_id", properties.getClientId());
-            formData.add("code_verifier", oauthState.getCodeVerifier());
-
-            if (StringUtils.hasText(properties.getClientSecret())) {
-                formData.add("client_secret", properties.getClientSecret());
-            }
-
-            String tokenUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
-                    .path(properties.getEndpoints().getTokenUri())
-                    .build()
-                    .toUriString();
-
-            log.debug("正在用授权码交换令牌: {}", tokenUrl);
-
-            WebClient webClient = ssoClient.getOAuthWebClient();
-
-            return webClient
-                    .post()
-                    .uri(tokenUrl)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .header("Accept", "application/json")
-                    .body(BodyInserters.fromFormData(formData))
-                    .retrieve()
-                    .bodyToMono(OAuthToken.class)
-                    .map(token -> {
-                        token.setCreatedAt(System.currentTimeMillis());
-                        return token;
-                    })
-                    .onErrorMap(error -> {
-                        log.error("授权码交换失败: {}", error.getMessage());
-                        if (error instanceof TokenException) {
-                            return error;
-                        }
-                        return new TokenException(
-                                SsoErrorCode.INVALID_CODE,
-                                "授权码交换失败: " + error.getMessage(),
-                                error,
-                                TokenException.TOKEN_TYPE_AUTHORIZATION_CODE
-                        );
-                    });
-        });
+    public Mono<TokenResult> exchangeCodeForToken(ExchangeCodeRequest request) {
+        log.debug("[聚合层] 使用授权码交换令牌");
+        return httpClient.exchangeCodeForTokenSdk(request);
     }
 
     /**
      * 刷新令牌
      *
-     * @param refreshToken 刷新令牌
-     * @return 新的 OAuthToken 令牌响应
+     * @param request 刷新令牌请求
+     * @return 令牌结果
      */
-    public Mono<OAuthToken> refreshToken(String refreshToken) {
-        return Mono.defer(() -> {
-            if (!StringUtils.hasText(refreshToken)) {
-                return Mono.error(new TokenException(
-                        TokenException.TOKEN_TYPE_REFRESH,
-                        "刷新令牌不能为空"
-                ));
-            }
-
-            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.add("grant_type", "refresh_token");
-            formData.add("refresh_token", refreshToken);
-            formData.add("client_id", properties.getClientId());
-
-            if (StringUtils.hasText(properties.getClientSecret())) {
-                formData.add("client_secret", properties.getClientSecret());
-            }
-
-            String tokenUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
-                    .path(properties.getEndpoints().getTokenUri())
-                    .build()
-                    .toUriString();
-
-            log.debug("正在刷新令牌: {}", tokenUrl);
-
-            WebClient webClient = ssoClient.getOAuthWebClient();
-
-            return webClient
-                    .post()
-                    .uri(tokenUrl)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .header("Accept", "application/json")
-                    .body(BodyInserters.fromFormData(formData))
-                    .retrieve()
-                    .bodyToMono(OAuthToken.class)
-                    .map(token -> {
-                        token.setCreatedAt(System.currentTimeMillis());
-                        return token;
-                    })
-                    .onErrorMap(error -> {
-                        log.error("刷新令牌失败: {}", error.getMessage());
-                        if (error instanceof TokenException) {
-                            return error;
-                        }
-                        return new TokenException(
-                                SsoErrorCode.TOKEN_INVALID,
-                                "刷新令牌失败: " + error.getMessage(),
-                                error,
-                                TokenException.TOKEN_TYPE_REFRESH
-                        );
-                    });
-        });
+    public Mono<TokenResult> refreshToken(RefreshTokenRequest request) {
+        log.debug("[聚合层] 刷新令牌");
+        return httpClient.refreshTokenSdk(request);
     }
 
     /**
      * 撤销令牌
      *
-     * @param token     要撤销的令牌
-     * @param tokenType 令牌类型
+     * @param request 撤销令牌请求
      * @return 如果撤销成功返回 {@code true}，否则返回 {@code false}
      */
-    public Mono<Boolean> revokeToken(String token, String tokenType) {
-        return Mono.defer(() -> {
-            if (!StringUtils.hasText(token)) {
-                log.warn("待撤销的令牌为空");
-                return Mono.just(false);
-            }
-
-            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.add("token", token);
-            formData.add("token_type_hint", tokenType);
-            formData.add("client_id", properties.getClientId());
-
-            if (StringUtils.hasText(properties.getClientSecret())) {
-                formData.add("client_secret", properties.getClientSecret());
-            }
-
-            String revokeUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
-                    .path(properties.getEndpoints().getRevocationUri())
-                    .build()
-                    .toUriString();
-
-            log.debug("正在撤销令牌: {}", revokeUrl);
-
-            WebClient webClient = ssoClient.getOAuthWebClient();
-
-            return webClient
-                    .post()
-                    .uri(revokeUrl)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .body(BodyInserters.fromFormData(formData))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .map(response -> {
-                        log.debug("令牌撤销成功");
-                        return true;
-                    })
-                    .onErrorResume(error -> {
-                        log.warn("撤销令牌失败: {}", error.getMessage());
-                        return Mono.just(false);
-                    });
-        });
+    public Mono<Boolean> revokeToken(RevokeTokenRequest request) {
+        log.debug("[聚合层] 撤销令牌");
+        return httpClient.revokeTokenSdk(request);
     }
 
     /**
      * 令牌自省
      *
-     * @param token 要自省的令牌
-     * @return OAuthIntrospection 令牌自省结果
+     * @param request 令牌自省请求
+     * @return 令牌自省结果
      */
-    public Mono<OAuthIntrospection> introspectToken(String token) {
-        return introspectToken(token, "access_token");
-    }
-
-    /**
-     * 令牌自省（指定令牌类型）
-     *
-     * @param token     要自省的令牌
-     * @param tokenType 令牌类型提示
-     * @return OAuthIntrospection 令牌自省结果
-     */
-    public Mono<OAuthIntrospection> introspectToken(String token, String tokenType) {
-        return Mono.defer(() -> {
-            if (!StringUtils.hasText(token)) {
-                return Mono.error(new TokenException(
-                        "用于内省的令牌不能为空"
-                ));
-            }
-
-            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.add("token", token);
-            formData.add("token_type_hint", tokenType);
-            formData.add("client_id", properties.getClientId());
-
-            if (StringUtils.hasText(properties.getClientSecret())) {
-                formData.add("client_secret", properties.getClientSecret());
-            }
-
-            String introspectUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
-                    .path(properties.getEndpoints().getIntrospectionUri())
-                    .build()
-                    .toUriString();
-
-            log.debug("正在内省令牌: {}", introspectUrl);
-
-            WebClient webClient = ssoClient.getOAuthWebClient();
-
-            return webClient
-                    .post()
-                    .uri(introspectUrl)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .header("Accept", "application/json")
-                    .body(BodyInserters.fromFormData(formData))
-                    .retrieve()
-                    .bodyToMono(OAuthIntrospection.class)
-                    .onErrorMap(error -> {
-                        log.error("内省令牌失败: {}", error.getMessage());
-                        if (error instanceof TokenException tokenException) {
-                            return tokenException;
-                        }
-                        return new TokenException(
-                                SsoErrorCode.INTROSPECTION_FAILED,
-                                "内省令牌失败: " + error.getMessage(),
-                                error,
-                                null
-                        );
-                    });
-        });
+    public Mono<IntrospectResult> introspectToken(IntrospectTokenRequest request) {
+        log.debug("[聚合层] 令牌自省");
+        return httpClient.introspectTokenSdk(request);
     }
 
     /**
      * 验证令牌有效性
      *
-     * @param token 要验证的令牌
-     * @return 如果令牌有效返回 {@code true}，否则返回 {@code false}
+     * @param request 令牌验证请求
+     * @return 令牌验证结果
      */
-    public Mono<Boolean> validateToken(String token) {
-        return validateToken(token, "access_token");
-    }
-
-    /**
-     * 验证令牌有效性（指定令牌类型）
-     *
-     * @param token     要验证的令牌
-     * @param tokenType 令牌类型提示
-     * @return 如果令牌有效返回 {@code true}，否则返回 {@code false}
-     */
-    public Mono<Boolean> validateToken(String token, String tokenType) {
-        return this.introspectToken(token, tokenType)
-                .map(OAuthIntrospection::isActive)
-                .onErrorResume(error -> {
-                    log.warn("令牌验证失败: {}", error.getMessage());
-                    return Mono.just(false);
-                });
-    }
-
-    /**
-     * 构建授权 URL
-     */
-    private String buildAuthorizationUrl(String state, String codeChallenge, String scope) {
-        return UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
-                .path(properties.getEndpoints().getAuthUri())
-                .queryParam("response_type", "code")
-                .queryParam("client_id", properties.getClientId())
-                .queryParam("redirect_uri", properties.getRedirectUri())
-                .queryParam("state", state)
-                .queryParam("code_challenge", codeChallenge)
-                .queryParam("code_challenge_method", PkceUtil.getCodeChallengeMethod())
-                .queryParam("scope", scope)
-                .build()
-                .toUriString();
+    public Mono<ValidateResult> validateToken(ValidateTokenRequest request) {
+        log.debug("[聚合层] 验证令牌有效性");
+        return httpClient.validateTokenSdk(request);
     }
 }

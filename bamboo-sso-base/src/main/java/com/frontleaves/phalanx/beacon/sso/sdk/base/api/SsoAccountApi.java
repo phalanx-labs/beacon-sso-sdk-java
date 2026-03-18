@@ -1,21 +1,24 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.api;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoLoginResult;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoRegisterResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.grpc.SsoGrpcAuthClient;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.ChangePasswordRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.PasswordLoginRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.RegisterEmailRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.RevokeTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.account.LoginResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.account.RegisterResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.GrpcModelConverter;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.ChangePasswordRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.PasswordLoginRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RegisterByEmailRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RevokeTokenRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.StringUtils;
 
 /**
- * 账户管理（gRPC-only）
+ * 账户管理聚合层（gRPC-only）
  * <p>
  * 封装账户管理相关操作，包括邮箱注册、密码登录、修改密码和令牌撤销。
- * 所有方法均通过 gRPC 协议与 SSO 服务通信。
+ * 负责将 SDK Request 转换为 protobuf Request，调用 gRPC 客户端，
+ * 并将 protobuf Response 转换为 SDK Result。
  * </p>
  *
  * @author xiao_lfeng
@@ -25,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SsoAccountApi {
 
-    private final SsoRequest ssoRequest;
+    private final SsoGrpcAuthClient grpcClient;
     private final GrpcModelConverter converter;
 
     /**
@@ -34,9 +37,24 @@ public class SsoAccountApi {
      * @param request 注册请求
      * @return 注册结果
      */
-    public SsoRegisterResult registerByEmail(RegisterByEmailRequest request) {
-        log.debug("执行邮箱注册: email={}", request.getEmail());
-        return converter.toRegisterResult(ssoRequest.auth().registerByEmail(request));
+    public RegisterResult registerByEmail(@NotNull RegisterEmailRequest request) {
+        log.debug("[聚合层] 执行邮箱注册: email={}", request.getEmail());
+
+        // SDK Request → Protobuf Request
+        // 注意：protobuf 字段名是 code，不是 verifyCode
+        var grpcRequestBuilder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RegisterByEmailRequest.newBuilder()
+                .setEmail(request.getEmail())
+                .setPassword(request.getPassword())
+                .setUsername(request.getUsername());
+        if (StringUtils.hasText(request.getVerifyCode())) {
+            grpcRequestBuilder.setCode(request.getVerifyCode());
+        }
+
+        // 调用 gRPC 客户端
+        var response = grpcClient.registerByEmail(grpcRequestBuilder.build());
+
+        // Protobuf Response → SDK Result
+        return converter.toRegisterResult(response);
     }
 
     /**
@@ -45,9 +63,20 @@ public class SsoAccountApi {
      * @param request 登录请求
      * @return 登录结果
      */
-    public SsoLoginResult passwordLogin(PasswordLoginRequest request) {
-        log.debug("执行密码登录: username={}", request.getUsername());
-        return converter.toLoginResult(ssoRequest.auth().passwordLogin(request));
+    public LoginResult passwordLogin(PasswordLoginRequest request) {
+        log.debug("[聚合层] 执行密码登录: username={}", request.getUsername());
+
+        // SDK Request → Protobuf Request
+        var grpcRequest = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.PasswordLoginRequest.newBuilder()
+                .setUsername(request.getUsername())
+                .setPassword(request.getPassword())
+                .build();
+
+        // 调用 gRPC 客户端
+        var response = grpcClient.passwordLogin(grpcRequest);
+
+        // Protobuf Response → SDK Result
+        return converter.toLoginResult(response);
     }
 
     /**
@@ -56,8 +85,16 @@ public class SsoAccountApi {
      * @param request 修改密码请求
      */
     public void changePassword(ChangePasswordRequest request) {
-        log.debug("执行修改密码");
-        ssoRequest.auth().changePassword(request);
+        log.debug("[聚合层] 执行修改密码");
+
+        // SDK Request → Protobuf Request
+        var grpcRequest = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.ChangePasswordRequest.newBuilder()
+                .setOldPassword(request.getOldPassword())
+                .setNewPassword(request.getNewPassword())
+                .build();
+
+        // 调用 gRPC 客户端
+        grpcClient.changePassword(grpcRequest);
     }
 
     /**
@@ -67,7 +104,16 @@ public class SsoAccountApi {
      * @param request     撤销请求
      */
     public void revokeToken(String accessToken, RevokeTokenRequest request) {
-        log.debug("执行令牌撤销");
-        ssoRequest.auth().revokeToken(accessToken, request);
+        log.debug("[聚合层] 执行令牌撤销");
+
+        // SDK Request → Protobuf Request
+        // 注意：protobuf RevokeTokenRequest 只有 tokenTypeHint 字段，token 从 metadata 传递
+        var grpcRequestBuilder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RevokeTokenRequest.newBuilder();
+        if (StringUtils.hasText(request.getTokenType())) {
+            grpcRequestBuilder.setTokenTypeHint(request.getTokenType());
+        }
+
+        // 调用 gRPC 客户端
+        grpcClient.revokeToken(accessToken, grpcRequestBuilder.build());
     }
 }

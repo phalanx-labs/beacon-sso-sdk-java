@@ -1,6 +1,6 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.api;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserinfoResult;
 import reactor.core.publisher.Mono;
 
 /**
@@ -19,7 +19,7 @@ public interface UserinfoClient {
      * 获取用户信息
      *
      * @param accessToken 访问令牌
-     * @return OAuthUserinfo 用户信息
+     * @return UserinfoResult 用户信息
      */
-    Mono<OAuthUserinfo> getUserinfo(String accessToken);
+    Mono<UserinfoResult> getUserinfo(String accessToken);
 }

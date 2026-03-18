@@ -18,7 +18,7 @@ import java.util.Optional;
 public class OAuthStateException extends SsoException {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -929935175628860180L;
 
     /**
      * 无效的 State 值（可选）

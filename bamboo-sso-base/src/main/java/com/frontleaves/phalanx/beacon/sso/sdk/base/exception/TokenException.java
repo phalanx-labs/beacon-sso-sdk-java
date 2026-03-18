@@ -18,7 +18,7 @@ import java.util.Optional;
 public class TokenException extends SsoException {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1352793253221398817L;
 
     /**
      * Token 类型常量

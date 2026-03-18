@@ -1,28 +1,26 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.api;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.grpc.SsoGrpcUserClient;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.http.SsoHttpUserClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.SsoConfigurationException;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoUserDetail;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.user.GetUserByIdRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserDetailResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserinfoResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.GrpcModelConverter;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.GrpcUserConverter;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserByIDRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.StringUtils;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 /**
- * 用户操作（双传输：gRPC 优先，HTTP 回退）
+ * 用户操作聚合层（双传输：gRPC 优先，HTTP 回退）
  * <p>
  * 封装用户相关操作，支持 gRPC 和 HTTP 双传输。
- * 当 gRPC 启用时优先使用 gRPC，否则回退到 HTTP。
+ * 当 gRPC 启用时优先使用 {@link SsoGrpcUserClient}，否则回退到 {@link SsoHttpUserClient}。
+ * 负责将 SDK Request 转换为 protobuf Request，调用 gRPC 客户端，
+ * 并将 protobuf Response 转换为 SDK Result。
  * </p>
  *
  * @author xiao_lfeng
@@ -33,28 +31,33 @@ import reactor.core.publisher.Mono;
 public class SsoUserApi {
 
     private final BeaconSsoProperties properties;
-    private final SsoClient ssoClient;
-    private final SsoRequest ssoRequest;
+    private final SsoGrpcUserClient grpcClient;
+    private final SsoHttpUserClient httpClient;
+    private final GrpcModelConverter converter;
     private final GrpcUserConverter userConverter;
-    private final GrpcModelConverter modelConverter;
 
     /**
      * 获取当前用户信息（双传输：gRPC 优先，HTTP 回退）
      *
      * @param accessToken 访问令牌
-     * @return OAuthUserinfo 用户信息
+     * @return UserinfoResult 用户信息
      */
-    public Mono<OAuthUserinfo> getCurrentUser(String accessToken) {
+    public Mono<UserinfoResult> getCurrentUser(String accessToken) {
         if (isGrpcEnabled()) {
-            log.debug("使用 gRPC 获取当前用户信息");
+            log.debug("[聚合层] 使用 gRPC 获取当前用户信息");
+
+            // Protobuf Request
+            var grpcRequest = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetCurrentUserRequest.newBuilder()
+                    .build();
+
+            // 调用 gRPC 客户端并转换响应
             return Mono.fromCallable(() -> {
-                User user = ssoRequest.user().getCurrentUser(accessToken);
-                return userConverter.convert(user);
+                var response = grpcClient.getCurrentUser(accessToken, grpcRequest);
+                return userConverter.convert(response.getUser());
             });
         }
-        // HTTP 回退
-        log.debug("使用 HTTP 获取当前用户信息");
-        return httpGetCurrentUser(accessToken);
+        log.debug("[聚合层] 使用 HTTP 获取当前用户信息");
+        return httpClient.getUserinfoSdk(accessToken);
     }
 
     /**
@@ -65,19 +68,28 @@ public class SsoUserApi {
      *
      * @param accessToken 访问令牌
      * @param request     用户查询请求
-     * @return SsoUserDetail 用户详细信息
+     * @return UserDetailResult 用户详细信息
      * @throws SsoConfigurationException 如果 gRPC 未启用
      */
-    public SsoUserDetail getUserById(String accessToken, GetUserByIDRequest request) {
+    public UserDetailResult getUserById(String accessToken, GetUserByIdRequest request) {
         if (!isGrpcEnabled()) {
             throw new SsoConfigurationException(
                     SsoErrorCode.GRPC_NOT_ENABLED,
                     "getUserById 需要 gRPC 通信，请启用 gRPC 配置"
             );
         }
-        log.debug("使用 gRPC 根据 ID 获取用户信息: userId={}", request.getUserId());
-        User user = ssoRequest.user().getUserById(accessToken, request);
-        return modelConverter.toUserDetail(user);
+        log.debug("[聚合层] 使用 gRPC 根据 ID 获取用户信息: userId={}", request.getUserId());
+
+        // SDK Request → Protobuf Request
+        var grpcRequest = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserByIDRequest.newBuilder()
+                .setUserId(request.getUserId())
+                .build();
+
+        // 调用 gRPC 客户端
+        var response = grpcClient.getUserByID(accessToken, grpcRequest);
+
+        // Protobuf Response → SDK Result
+        return converter.toUserDetail(response.getUser());
     }
 
     /**
@@ -86,54 +98,6 @@ public class SsoUserApi {
      * @return 如果 gRPC 启用返回 true，否则返回 false
      */
     private boolean isGrpcEnabled() {
-        return ssoRequest != null
-                && properties.getGrpc() != null
-                && properties.getGrpc().isEnabled();
-    }
-
-    /**
-     * 通过 HTTP 获取当前用户信息
-     *
-     * @param accessToken 访问令牌
-     * @return OAuthUserinfo 用户信息
-     */
-    private Mono<OAuthUserinfo> httpGetCurrentUser(String accessToken) {
-        return Mono.defer(() -> {
-            if (!StringUtils.hasText(accessToken)) {
-                return Mono.error(new TokenException(
-                        TokenException.TOKEN_TYPE_ACCESS,
-                        "Access Token 不能为空"
-                ));
-            }
-
-            String userinfoUrl = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
-                    .path(properties.getEndpoints().getUserinfoUri())
-                    .build()
-                    .toUriString();
-
-            log.debug("正在从以下地址获取用户信息（HTTP）: {}", userinfoUrl);
-
-            WebClient webClient = ssoClient.getUserinfoWebClient();
-
-            return webClient
-                    .get()
-                    .uri(userinfoUrl)
-                    .header("Authorization", "Bearer " + accessToken)
-                    .header("Accept", "application/json")
-                    .retrieve()
-                    .bodyToMono(OAuthUserinfo.class)
-                    .onErrorMap(error -> {
-                        log.error("获取用户信息失败: {}", error.getMessage());
-                        if (error instanceof TokenException) {
-                            return error;
-                        }
-                        return new TokenException(
-                                SsoErrorCode.USERINFO_FAILED,
-                                "获取用户信息失败: " + error.getMessage(),
-                                error,
-                                TokenException.TOKEN_TYPE_ACCESS
-                        );
-                    });
-        });
+        return properties.getGrpc() != null && properties.getGrpc().isEnabled();
     }
 }

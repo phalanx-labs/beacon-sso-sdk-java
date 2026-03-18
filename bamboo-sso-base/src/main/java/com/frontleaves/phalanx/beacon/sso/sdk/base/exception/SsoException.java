@@ -1,6 +1,7 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.exception;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
+import lombok.Getter;
 
 import java.io.Serial;
 import java.util.Optional;
@@ -15,10 +16,11 @@ import java.util.Optional;
  * @author Xiao Lfeng &lt;xiao_lfeng@icloud.com&gt;
  * @since 1.0.0
  */
+@Getter
 public class SsoException extends RuntimeException {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5947045825173410514L;
 
     /**
      * 错误码
@@ -67,15 +69,6 @@ public class SsoException extends RuntimeException {
     public SsoException(SsoErrorCode errorCode, String message, Throwable cause) {
         super(message, cause);
         this.errorCode = errorCode;
-    }
-
-    /**
-     * 获取错误码
-     *
-     * @return 错误码枚举
-     */
-    public SsoErrorCode getErrorCode() {
-        return errorCode;
     }
 
     /**
