@@ -59,44 +59,4 @@ public class GrpcConfiguration {
                 .usePlaintext()
                 .build();
     }
-
-    /**
-     * 创建 WebClient Bean
-     *
-     * @param properties SSO 配置属性
-     * @return 配置好的 WebClient 实例
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public WebClient beaconSsoWebClient(BeaconSsoProperties properties) {
-        return WebClient.builder()
-                .baseUrl(properties.getBaseUrl())
-                .build();
-    }
-
-    /**
-     * 创建 SsoWebClient Bean
-     *
-     * @param properties SSO 配置属性
-     * @return 配置好的 SsoWebClient 实例
-     */
-    @Bean("ssoClient")
-    @ConditionalOnMissingBean(SsoWebClient.class)
-    public SsoWebClient ssoClient(BeaconSsoProperties properties) {
-        return new SsoWebClient(properties);
-    }
-
-    /**
-     * 创建 SsoApi 门面 Bean
-     *
-     * @param properties SSO 配置属性
-     * @param webClient  WebClient 实例
-     * @param channel    gRPC 通道
-     * @return SsoApi 实例
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public SsoApi ssoApi(BeaconSsoProperties properties, WebClient webClient, ManagedChannel channel) {
-        return new SsoApi(properties, webClient, channel);
-    }
 }

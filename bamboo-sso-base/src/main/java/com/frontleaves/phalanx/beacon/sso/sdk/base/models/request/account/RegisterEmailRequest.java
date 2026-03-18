@@ -42,7 +42,12 @@ public class RegisterEmailRequest implements Serializable {
     private String username;
 
     /**
-     * 验证码
+     * 验证码（必填）
      */
-    private String verifyCode;
+    private String code;
+
+    /**
+     * 昵称（可选，不填则使用用户名或自动生成）
+     */
+    private String nickname;
 }

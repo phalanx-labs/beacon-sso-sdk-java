@@ -94,12 +94,15 @@ public class SsoMerchantApi {
         log.debug("[聚合层] 获取用户标签列表: userId={}", request.getUserId());
 
         // SDK Request → Protobuf Request
-        var grpcRequest = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserTagsRequest.newBuilder()
-                .setUserId(request.getUserId())
-                .build();
+        var grpcRequestBuilder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserTagsRequest.newBuilder()
+                .setUserId(request.getUserId());
+
+        if (request.getEnabledOnly() != null) {
+            grpcRequestBuilder.setEnabledOnly(request.getEnabledOnly());
+        }
 
         // 调用 gRPC 客户端
-        var response = grpcClient.getUserTags(grpcRequest);
+        var response = grpcClient.getUserTags(grpcRequestBuilder.build());
 
         // Protobuf Response → SDK Result
         return toMerchantTags(response.getTagsList());

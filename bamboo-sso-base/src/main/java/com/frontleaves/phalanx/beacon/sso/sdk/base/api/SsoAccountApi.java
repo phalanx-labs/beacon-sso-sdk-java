@@ -61,13 +61,15 @@ public class SsoAccountApi {
         log.debug("[聚合层] 执行邮箱注册: email={}", request.getEmail());
 
         // SDK Request → Protobuf Request
-        // 注意：protobuf 字段名是 code，不是 verifyCode
         var grpcRequestBuilder = RegisterByEmailRequest.newBuilder()
                 .setEmail(request.getEmail())
                 .setPassword(request.getPassword())
                 .setUsername(request.getUsername());
-        if (StringUtils.hasText(request.getVerifyCode())) {
-            grpcRequestBuilder.setCode(request.getVerifyCode());
+        if (StringUtils.hasText(request.getCode())) {
+            grpcRequestBuilder.setCode(request.getCode());
+        }
+        if (StringUtils.hasText(request.getNickname())) {
+            grpcRequestBuilder.setNickname(request.getNickname());
         }
 
         // 调用 gRPC 客户端
@@ -173,8 +175,8 @@ public class SsoAccountApi {
         // SDK Request → Protobuf Request
         // 注意：protobuf RevokeTokenRequest 只有 tokenTypeHint 字段，token 从 metadata 传递
         var grpcRequestBuilder = com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.RevokeTokenRequest.newBuilder();
-        if (StringUtils.hasText(request.getTokenType())) {
-            grpcRequestBuilder.setTokenTypeHint(request.getTokenType());
+        if (StringUtils.hasText(request.getTokenTypeHint())) {
+            grpcRequestBuilder.setTokenTypeHint(request.getTokenTypeHint());
         }
 
         // 调用 gRPC 客户端

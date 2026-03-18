@@ -32,7 +32,13 @@ public class RevokeTokenRequest implements Serializable {
     private String token;
 
     /**
-     * 令牌类型（如 access_token、refresh_token）
+     * Token 类型提示（可选）
+     * <p>
+     * 可选值：
+     * - access_token: 仅注销 Access Token
+     * - refresh_token: 仅注销 Refresh Token
+     * - 留空: 默认注销 Access Token
+     * </p>
      */
-    private String tokenType;
+    private String tokenTypeHint;
 }

@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class SsoWebClient {
 
+    private final BeaconSsoProperties properties;
+
     /**
      * 连接超时时间（毫秒）
      */
@@ -48,6 +50,7 @@ public class SsoWebClient {
      * 响应超时时间（毫秒）
      */
     private static final long RESPONSE_TIMEOUT_MS = 60_000;
+
     /**
      * 构造函数
      *
@@ -55,6 +58,7 @@ public class SsoWebClient {
      */
     public SsoWebClient(@NonNull BeaconSsoProperties properties) {
         log.debug("初始化 SsoWebClient, baseUrl: {}", properties.getBaseUrl());
+        this.properties = properties;
     }
 
     /**
@@ -62,10 +66,9 @@ public class SsoWebClient {
      * 内部自动配置了连接超时、读取超时、写入超时及响应超时，
      * 并预设了 Content-Type、Accept 及 User-Agent 等默认请求头。
      *
-     * @param properties SSO 配置属性，用于获取 SSO 服务器的基础 URL
      * @return 配置完成的 WebClient 实例
      */
-    public @NotNull WebClient createWebClient(@NonNull BeaconSsoProperties properties) {
+    public @NotNull WebClient createWebClient() {
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIMEOUT_MS)
                 .responseTimeout(Duration.ofMillis(RESPONSE_TIMEOUT_MS))

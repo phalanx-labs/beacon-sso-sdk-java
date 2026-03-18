@@ -16,14 +16,14 @@
     <name>bamboo-sso</name>
     <description>Beacon SSO SDK for Java - Spring Boot Starter</description>
 
-    <url>https://github.com/xiao-lfeng/beacon-sso-sdk-java</url>
+    <url>https://github.com/phalanx-labs/beacon-sso-sdk-java</url>
 
     <developers>
         <developer>
-            <id>xiao-lfeng</id>
-            <name>筱锋 (Xiao Lfeng)</name>
-            <email>xiao@x-lf.space</email>
-            <url>https://github.com/xiao-lfeng</url>
+            <id>xiao_lfeng</id>
+            <name>筱锋xiao_lfeng</name>
+            <email>gm@x-lf.cn</email>
+            <url>https://github.com/xiaolfeng</url>
         </developer>
     </developers>
 
@@ -36,9 +36,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git://github.com/xiao-lfeng/beacon-sso-sdk-java.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com:xiao-lfeng/beacon-sso-sdk-java.git</developerConnection>
-        <url>https://github.com/xiao-lfeng/beacon-sso-sdk-java</url>
+        <connection>scm:git:git://github.com/phalanx-labs/beacon-sso-sdk-java.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:phalanx-labs/beacon-sso-sdk-java.git</developerConnection>
+        <url>https://github.com/phalanx-labs/beacon-sso-sdk-java</url>
     </scm>
 
     <properties>

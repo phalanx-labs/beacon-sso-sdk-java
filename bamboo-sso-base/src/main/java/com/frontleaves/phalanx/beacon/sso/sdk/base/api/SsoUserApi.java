@@ -109,14 +109,12 @@ public class SsoUserApi {
                 .needResetPassword(user.getNeedResetPassword())
                 .lastLoginAt(user.hasLastLoginAt() ? user.getLastLoginAt() : null)
                 .lastLoginIp(user.hasLastLoginIp() ? user.getLastLoginIp() : null)
-                .roles(user.getRolesList().stream()
-                        .map(role -> RoleResult.builder()
-                                .code(role.getCode())
-                                .name(role.getName())
-                                .description(role.hasDescription() ? role.getDescription() : null)
-                                .build())
-                        .toList())
-                .build();
+                .roles(user.getRolesList().stream().map(role -> RoleResult.builder()
+                        .code(role.getCode())
+                        .name(role.getName())
+                        .description(role.hasDescription() ? role.getDescription() : null)
+                        .build()).toList()
+                ).build();
     }
 
     /**

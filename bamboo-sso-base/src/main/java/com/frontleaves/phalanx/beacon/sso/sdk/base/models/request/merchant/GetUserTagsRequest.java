@@ -30,4 +30,9 @@ public class GetUserTagsRequest implements Serializable {
      * 用户 ID
      */
     private String userId;
+
+    /**
+     * 是否只返回启用的标签
+     */
+    private Boolean enabledOnly;
 }

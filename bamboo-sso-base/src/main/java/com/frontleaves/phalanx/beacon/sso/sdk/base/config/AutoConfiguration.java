@@ -1,6 +1,8 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.config;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +31,7 @@ import org.springframework.context.annotation.Import;
  * @author xiao_lfeng
  * @since 0.0.1
  */
+@Slf4j
 @Configuration
 @ConditionalOnProperty(prefix = "beacon.sso", name = "enabled", matchIfMissing = true)
 @EnableConfigurationProperties(BeaconSsoProperties.class)
@@ -38,13 +41,8 @@ import org.springframework.context.annotation.Import;
 })
 public class AutoConfiguration {
 
-    /**
-     * 默认构造函数
-     * <p>
-     * 主配置类，通过 @Import 注解自动加载各子配置模块。
-     * </p>
-     */
-    public AutoConfiguration() {
-        // 配置类初始化完成
+    @PostConstruct
+    public void init() {
+        log.info("AutoConfiguration has been initialized.");
     }
 }

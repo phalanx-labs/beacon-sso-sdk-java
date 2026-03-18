@@ -312,7 +312,7 @@ public class SsoHttpOAuthClient {
      * @return 如果撤销成功返回 {@code true}，否则返回 {@code false}
      */
     public Mono<Boolean> revokeTokenSdk(RevokeTokenRequest request) {
-        return revokeToken(request.getToken(), request.getTokenType());
+        return revokeToken(request.getToken(), request.getTokenTypeHint());
     }
 
     /**
