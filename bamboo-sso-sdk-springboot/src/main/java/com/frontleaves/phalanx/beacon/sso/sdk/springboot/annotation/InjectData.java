@@ -45,8 +45,6 @@ public @interface InjectData {
      *   <li>{@code iss} - 签发者</li>
      *   <li>{@code jti} - JWT ID</li>
      * </ul>
-     * 若为空字符串，则注入完整的 {@link com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection} 对象。
-     * </p>
      *
      * @return 字段名称，默认为空字符串
      */

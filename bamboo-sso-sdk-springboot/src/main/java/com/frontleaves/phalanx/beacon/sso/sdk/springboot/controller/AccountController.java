@@ -8,8 +8,6 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.Regist
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.RevokeTokenRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.account.LoginResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.account.RegisterResult;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.RegisterByEmail;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.PasswordLogin;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.utility.SsoSecurityUtil;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
@@ -66,22 +64,13 @@ public class AccountController {
      * @return 注册成功的响应，包含用户 ID 和初始 Token
      */
     @PostMapping("/register/email")
-    public ResponseEntity<BaseResponse<RegisterByEmail>> registerByEmail(
-            @RequestBody @Valid com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.RegisterByEmailRequest request
+    public ResponseEntity<BaseResponse<RegisterResult>> registerByEmail(
+            @RequestBody @Valid RegisterEmailRequest request
     ) {
         log.info("处理邮箱注册请求");
 
-        // 构建 SDK Request
-        RegisterEmailRequest sdkRequest = RegisterEmailRequest.builder()
-                .email(request.getEmail())
-                .password(request.getPassword())
-                .username(request.getUsername())
-                .verifyCode(request.getCode())
-                .build();
-
         try {
-            RegisterResult response = ssoAccountApi.registerByEmail(sdkRequest);
-            RegisterByEmail data = this.toRegisterResponse(response);
+            RegisterResult data = ssoAccountApi.registerByEmail(request);
             return ResultUtil.success("注册成功", data);
         } catch (Exception e) {
             log.warn("Register by email failed: {}", e.getMessage(), e);
@@ -102,23 +91,13 @@ public class AccountController {
      * @return 登录成功的响应，包含访问令牌、令牌类型、过期时间等信息
      */
     @PostMapping("/login/password")
-    public ResponseEntity<BaseResponse<PasswordLogin>> passwordLogin(
-            @RequestBody @Valid com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.PasswordLoginRequest request
+    public ResponseEntity<BaseResponse<LoginResult>> passwordLogin(
+            @RequestBody @Valid PasswordLoginRequest request
     ) {
         log.info("处理密码登录请求");
 
-        // 构建 SDK Request
-        PasswordLoginRequest sdkRequest = PasswordLoginRequest.builder()
-                .username(request.getUsername())
-                .password(request.getPassword())
-                .scope(request.getScope())
-                .clientIp(request.getClientIp())
-                .userAgent(request.getUserAgent())
-                .build();
-
         try {
-            LoginResult response = ssoAccountApi.passwordLogin(sdkRequest);
-            PasswordLogin data = this.toLoginResponse(response);
+            LoginResult data = ssoAccountApi.passwordLogin(request);
             return ResultUtil.success("登录成功", data);
         } catch (Exception e) {
             log.warn("Password login failed: {}", e.getMessage(), e);
@@ -139,19 +118,12 @@ public class AccountController {
      */
     @PostMapping("/password/change")
     public ResponseEntity<BaseResponse<Void>> changePassword(
-            @RequestBody @Valid com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.ChangePasswordRequest request
+            @RequestBody @Valid ChangePasswordRequest request
     ) {
         log.info("处理修改密码请求");
 
-        // 构建 SDK Request
-        ChangePasswordRequest sdkRequest = ChangePasswordRequest.builder()
-                .userId(request.getUserId())
-                .oldPassword(request.getOldPassword())
-                .newPassword(request.getNewPassword())
-                .build();
-
         try {
-            ssoAccountApi.changePassword(sdkRequest);
+            ssoAccountApi.changePassword(request);
             return ResultUtil.success("修改密码成功", null);
         } catch (Exception e) {
             log.warn("Change password failed: {}", e.getMessage(), e);
@@ -176,7 +148,7 @@ public class AccountController {
     @PostMapping("/logout")
     public ResponseEntity<BaseResponse<Void>> revokeToken(
             @RequestHeader(value = SsoHeaderConstants.AUTHORIZATION, required = false) String authorization,
-            @RequestBody(required = false) com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.RevokeTokenRequest request,
+            @RequestBody(required = false) RevokeTokenRequest request,
             HttpServletRequest httpRequest
     ) {
         log.info("处理注销令牌请求");
@@ -194,7 +166,8 @@ public class AccountController {
 
         // 构建 SDK Request
         RevokeTokenRequest sdkRequest = RevokeTokenRequest.builder()
-                .tokenType(request != null ? request.getTokenTypeHint() : null)
+                .token(accessToken)
+                .tokenTypeHint(request != null ? request.getTokenTypeHint() : null)
                 .build();
 
         try {
@@ -205,30 +178,6 @@ public class AccountController {
             ErrorCode errorCode = this.mapExceptionToErrorCode(e);
             return ResultUtil.error(errorCode, e.getMessage(), null);
         }
-    }
-
-    private RegisterByEmail toRegisterResponse(RegisterResult response) {
-        if (response == null) {
-            return null;
-        }
-        return RegisterByEmail.builder()
-                .userId(response.getUserId())
-                .token(response.getToken())
-                .build();
-    }
-
-    private PasswordLogin toLoginResponse(LoginResult response) {
-        if (response == null) {
-            return null;
-        }
-        return PasswordLogin.builder()
-                .accessToken(response.getAccessToken())
-                .tokenType(response.getTokenType())
-                .expiresIn(response.getExpiresIn())
-                .refreshToken(response.getRefreshToken())
-                .scope(response.getScope())
-                .idToken(response.getIdToken())
-                .build();
     }
 
     private ErrorCode mapExceptionToErrorCode(Exception e) {

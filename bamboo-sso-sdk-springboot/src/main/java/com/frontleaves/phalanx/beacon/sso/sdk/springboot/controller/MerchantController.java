@@ -6,13 +6,10 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.GetAn
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.GetMerchantTagsRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.GetRecentAnnouncementsRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.GetUserTagsRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.AnnouncementListMetaResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.AnnouncementResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.MerchantTagResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.RecentAnnouncementsResult;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.AnnouncementListMeta;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.RecentAnnouncements;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.MerchantAnnouncement;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.MerchantTag;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
 import com.xlf.utility.mvc.ResultUtil;
@@ -64,7 +61,7 @@ public class MerchantController {
      * @return 商户标签列表响应
      */
     @GetMapping("/tags")
-    public ResponseEntity<BaseResponse<List<MerchantTag>>> getMerchantTags(
+    public ResponseEntity<BaseResponse<List<MerchantTagResult>>> getMerchantTags(
             @RequestParam(value = "enabled_only", required = false) Boolean enabledOnly
     ) {
         log.info("处理获取商户标签请求");
@@ -76,10 +73,7 @@ public class MerchantController {
 
         try {
             List<MerchantTagResult> tags = ssoMerchantApi.getMerchantTags(sdkRequest);
-            List<MerchantTag> data = tags.stream()
-                    .map(this::toMerchantTag)
-                    .toList();
-            return ResultUtil.success("获取商户标签成功", data.isEmpty() ? null : data);
+            return ResultUtil.success("获取商户标签成功", tags.isEmpty() ? null : tags);
         } catch (Exception e) {
             log.warn("Get merchant tags failed: {}", e.getMessage(), e);
             ErrorCode errorCode = this.mapExceptionToErrorCode(e);
@@ -97,7 +91,7 @@ public class MerchantController {
      * @return 用户标签列表响应
      */
     @GetMapping("/users/{userId}/tags")
-    public ResponseEntity<BaseResponse<List<MerchantTag>>> getUserTags(
+    public ResponseEntity<BaseResponse<List<MerchantTagResult>>> getUserTags(
             @PathVariable String userId
     ) {
         log.info("Processing get user tags request: {}", userId);
@@ -113,10 +107,7 @@ public class MerchantController {
 
         try {
             List<MerchantTagResult> tags = ssoMerchantApi.getUserTags(sdkRequest);
-            List<MerchantTag> data = tags.stream()
-                    .map(this::toMerchantTag)
-                    .toList();
-            return ResultUtil.success("获取用户标签成功", data.isEmpty() ? null : data);
+            return ResultUtil.success("获取用户标签成功", tags.isEmpty() ? null : tags);
         } catch (Exception e) {
             log.warn("Get user tags failed: {}", e.getMessage(), e);
             ErrorCode errorCode = this.mapExceptionToErrorCode(e);
@@ -175,7 +166,7 @@ public class MerchantController {
      * @return 最近公告列表响应
      */
     @GetMapping("/announcements")
-    public ResponseEntity<BaseResponse<RecentAnnouncements>> getRecentAnnouncements(
+    public ResponseEntity<BaseResponse<RecentAnnouncementsResult>> getRecentAnnouncements(
             @RequestParam(value = "limit", required = false) Integer limit,
             @RequestParam(value = "active_only", required = false) Boolean activeOnly
     ) {
@@ -188,14 +179,7 @@ public class MerchantController {
                 .build();
 
         try {
-            RecentAnnouncementsResult recentResult = ssoMerchantApi.getRecentAnnouncements(sdkRequest);
-            List<MerchantAnnouncement> announcements = recentResult.getAnnouncements() == null ? List.of() : recentResult.getAnnouncements().stream()
-                    .map(this::toMerchantAnnouncement)
-                    .toList();
-            RecentAnnouncements data = RecentAnnouncements.builder()
-                    .announcements(announcements.isEmpty() ? null : announcements)
-                    .meta(this.toAnnouncementListMeta(recentResult.getMeta()))
-                    .build();
+            RecentAnnouncementsResult data = ssoMerchantApi.getRecentAnnouncements(sdkRequest);
             return ResultUtil.success("获取最近公告成功", data);
         } catch (Exception e) {
             log.warn("Get recent announcements failed: {}", e.getMessage(), e);
@@ -214,7 +198,7 @@ public class MerchantController {
      * @return 公告详情响应
      */
     @GetMapping("/announcements/{announcementId}")
-    public ResponseEntity<BaseResponse<MerchantAnnouncement>> getAnnouncement(
+    public ResponseEntity<BaseResponse<AnnouncementResult>> getAnnouncement(
             @PathVariable String announcementId
     ) {
         log.info("Processing get announcement request: {}", announcementId);
@@ -229,56 +213,13 @@ public class MerchantController {
                 .build();
 
         try {
-            AnnouncementResult announcement = ssoMerchantApi.getAnnouncement(sdkRequest);
-            MerchantAnnouncement data = this.toMerchantAnnouncement(announcement);
+            AnnouncementResult data = ssoMerchantApi.getAnnouncement(sdkRequest);
             return ResultUtil.success("获取公告详情成功", data);
         } catch (Exception e) {
             log.warn("Get announcement failed: {}", e.getMessage(), e);
             ErrorCode errorCode = this.mapExceptionToErrorCode(e);
             return ResultUtil.error(errorCode, e.getMessage(), null);
         }
-    }
-
-    private MerchantTag toMerchantTag(MerchantTagResult tag) {
-        if (tag == null) {
-            return null;
-        }
-        return MerchantTag.builder()
-                .id(tag.getId())
-                .code(tag.getCode())
-                .name(tag.getName())
-                .description(tag.getDescription())
-                .color(tag.getColor())
-                .icon(tag.getIcon())
-                .sortOrder(tag.getSortOrder() == 0 ? null : tag.getSortOrder())
-                .status(tag.getStatus() == 0 ? null : tag.getStatus())
-                .build();
-    }
-
-    private MerchantAnnouncement toMerchantAnnouncement(AnnouncementResult announcement) {
-        if (announcement == null) {
-            return null;
-        }
-        return MerchantAnnouncement.builder()
-                .id(announcement.getId())
-                .title(announcement.getTitle())
-                .content(announcement.getContent())
-                .scope(announcement.getScope() == 0 ? null : announcement.getScope())
-                .displayUntil(announcement.getDisplayUntil())
-                .createdAt(announcement.getCreatedAt())
-                .build();
-    }
-
-    private AnnouncementListMeta toAnnouncementListMeta(com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.merchant.AnnouncementListMetaResult meta) {
-        if (meta == null) {
-            return null;
-        }
-        return AnnouncementListMeta.builder()
-                .md5Hash(meta.getMd5Hash())
-                .sha256Hash(meta.getSha256Hash())
-                .count(meta.getCount() == 0 ? null : meta.getCount())
-                .generatedAt(meta.getGeneratedAt())
-                .build();
     }
 
     private ErrorCode mapExceptionToErrorCode(Exception e) {

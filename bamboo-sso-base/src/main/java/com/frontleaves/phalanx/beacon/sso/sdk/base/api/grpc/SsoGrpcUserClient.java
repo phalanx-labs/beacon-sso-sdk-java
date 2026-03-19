@@ -1,5 +1,6 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.api.grpc;
 
+import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoCacheConstants;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.GrpcUtil;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetCurrentUserRequest;
@@ -11,6 +12,7 @@ import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.cache.annotation.Cacheable;
 
 /**
  * SSO gRPC 用户服务客户端
@@ -31,11 +33,8 @@ public class SsoGrpcUserClient {
 
     /**
      * 获取当前用户信息
-     *
-     * @param accessToken Access Token（需要 Bearer 前缀）
-     * @param request     protobuf 获取当前用户请求
-     * @return protobuf 用户信息响应
      */
+    @Cacheable(cacheNames = SsoCacheConstants.CACHE_GRPC_USERINFO, key = "#accessToken")
     public GetCurrentUserResponse getCurrentUser(@NonNull String accessToken, @NonNull GetCurrentUserRequest request) {
         log.debug("[gRPC] 获取当前用户信息");
 
@@ -52,11 +51,8 @@ public class SsoGrpcUserClient {
 
     /**
      * 根据用户 ID 获取详细信息
-     *
-     * @param accessToken Access Token（需要 Bearer 前缀）
-     * @param request     protobuf 用户查询请求
-     * @return protobuf 用户详情响应
      */
+    @Cacheable(cacheNames = SsoCacheConstants.CACHE_GRPC_USERINFO, key = "#request.userId")
     public GetUserByIDResponse getUserByID(@NonNull String accessToken, @NonNull GetUserByIDRequest request) {
         log.debug("[gRPC] 根据 ID 获取用户信息: userId={}", request.getUserId());
 

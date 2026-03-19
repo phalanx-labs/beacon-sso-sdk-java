@@ -17,7 +17,7 @@ import java.util.Optional;
  * </p>
  *
  * @author Xiao Lfeng &lt;xiao_lfeng@icloud.com&gt;
- * @since 1.0.0
+ * @since 0.0.2
  */
 public final class OAuthUrlBuilder {
 

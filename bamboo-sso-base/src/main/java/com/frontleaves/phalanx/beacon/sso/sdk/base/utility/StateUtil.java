@@ -14,7 +14,7 @@ import java.util.Optional;
  * </p>
  *
  * @author Xiao Lfeng &lt;xiao_lfeng@icloud.com&gt;
- * @since 1.0.0
+ * @since 0.0.2
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.1">RFC 6749 - State Parameter</a>
  */
 public final class StateUtil {

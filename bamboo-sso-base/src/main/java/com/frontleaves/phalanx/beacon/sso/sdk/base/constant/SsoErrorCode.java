@@ -7,7 +7,7 @@ package com.frontleaves.phalanx.beacon.sso.sdk.base.constant;
  * </p>
  *
  * @author xiao_lfeng
- * @since 1.0.0
+ * @since 0.0.2
  */
 public enum SsoErrorCode {
 

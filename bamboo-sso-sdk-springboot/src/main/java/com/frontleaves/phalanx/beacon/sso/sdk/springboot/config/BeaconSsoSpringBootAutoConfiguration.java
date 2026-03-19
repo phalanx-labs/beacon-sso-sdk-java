@@ -6,7 +6,6 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoMerchantApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoOAuthApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoPublicApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoUserApi;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.api.UserinfoClient;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.config.AutoConfiguration;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.InjectDataAspect;
@@ -20,11 +19,6 @@ import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.AuthLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthStateRepository;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthTokenRepository;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.UserinfoRepository;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.impl.OAuthStateRepositoryImpl;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.impl.OAuthTokenRepositoryImpl;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.impl.UserinfoRepositoryImpl;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -57,7 +51,6 @@ import org.springframework.context.annotation.Import;
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(prefix = "beacon.sso", name = "enabled", havingValue = "true", matchIfMissing = true)
 @Import({
-        BeaconSsoCacheConfiguration.class,
         AutoConfiguration.class
 })
 public class BeaconSsoSpringBootAutoConfiguration {
@@ -72,29 +65,7 @@ public class BeaconSsoSpringBootAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public OAuthStateRepository oauthStateRepository() {
-        return new OAuthStateRepositoryImpl();
-    }
-
-    /**
-     * 注册 OAuthTokenRepository Bean
-     *
-     * @return OAuthTokenRepository 实例
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public OAuthTokenRepository oauthTokenRepository() {
-        return new OAuthTokenRepositoryImpl();
-    }
-
-    /**
-     * 注册 UserinfoRepository Bean
-     *
-     * @return UserinfoRepository 实例
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public UserinfoRepository userinfoRepository() {
-        return new UserinfoRepositoryImpl();
+        return new OAuthStateRepository();
     }
 
     // ==================== Logic ====================
@@ -105,32 +76,28 @@ public class BeaconSsoSpringBootAutoConfiguration {
      * @param properties      SSO 配置属性
      * @param ssoOAuthApi     HTTP OAuth 客户端
      * @param stateRepository OAuth State 存储库
-     * @param tokenRepository OAuth Token 存储库
      * @return AuthLogic 实例
      */
     @Bean
     @ConditionalOnMissingBean
     public AuthLogic authLogic(BeaconSsoProperties properties,
                                SsoOAuthApi ssoOAuthApi,
-                               OAuthStateRepository stateRepository,
-                               OAuthTokenRepository tokenRepository) {
-        return new AuthLogic(properties, ssoOAuthApi, stateRepository, tokenRepository);
+                               OAuthStateRepository stateRepository) {
+        return new AuthLogic(properties, ssoOAuthApi, stateRepository);
     }
 
     /**
      * 注册 UserLogic Bean
      *
-     * @param ssoOAuthApi       HTTP OAuth 客户端
-     * @param userinfoClient    用户信息客户端（SPI）
-     * @param userinfoRepository 用户信息缓存
+     * @param ssoOAuthApi OAuth 客户端
+     * @param ssoUserApi  用户操作 API
      * @return UserLogic 实例
      */
     @Bean
     @ConditionalOnMissingBean
     public UserLogic userLogic(SsoOAuthApi ssoOAuthApi,
-                               UserinfoClient userinfoClient,
-                               UserinfoRepository userinfoRepository) {
-        return new UserLogic(ssoOAuthApi, userinfoClient, userinfoRepository);
+                               SsoUserApi ssoUserApi) {
+        return new UserLogic(ssoOAuthApi, ssoUserApi);
     }
 
     // ==================== Aspect ====================
@@ -181,21 +148,17 @@ public class BeaconSsoSpringBootAutoConfiguration {
     /**
      * 创建 AuthController Bean
      *
-     * @param authLogic         认证逻辑处理类
-     * @param userLogic         用户业务逻辑处理类
-     * @param tokenRepository   令牌存储库
-     * @param userinfoRepository 用户信息存储库
+     * @param authLogic 认证逻辑处理类
+     * @param userLogic 用户业务逻辑处理类
      * @return AuthController 实例
      */
     @Bean
     @ConditionalOnMissingBean
     public AuthController authController(
             AuthLogic authLogic,
-            UserLogic userLogic,
-            OAuthTokenRepository tokenRepository,
-            UserinfoRepository userinfoRepository
+            UserLogic userLogic
     ) {
-        return new AuthController(authLogic, userLogic, tokenRepository, userinfoRepository);
+        return new AuthController(authLogic, userLogic);
     }
 
     /**

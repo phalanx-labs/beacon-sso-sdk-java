@@ -1,5 +1,6 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.api.grpc;
 
+import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoCacheConstants;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.GrpcUtil;
 import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.CheckUserHasTagRequest;
@@ -17,6 +18,7 @@ import io.grpc.ManagedChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.cache.annotation.Cacheable;
 
 /**
  * SSO gRPC 商户服务客户端
@@ -37,10 +39,8 @@ public class SsoGrpcMerchantClient {
 
     /**
      * 获取商户标签列表
-     *
-     * @param request protobuf 标签查询请求
-     * @return protobuf 标签列表响应
      */
+    @Cacheable(cacheNames = SsoCacheConstants.CACHE_GRPC_MERCHANT_TAG, key = "'merchantTags'")
     public GetMerchantTagsResponse getMerchantTags(@NonNull GetMerchantTagsRequest request) {
         log.debug("[gRPC] 获取商户标签列表");
 
@@ -55,10 +55,8 @@ public class SsoGrpcMerchantClient {
 
     /**
      * 获取用户标签列表
-     *
-     * @param request protobuf 用户标签查询请求
-     * @return protobuf 用户标签列表响应
      */
+    @Cacheable(cacheNames = SsoCacheConstants.CACHE_GRPC_MERCHANT_TAG, key = "'userTags:' + #request.userId")
     public GetUserTagsResponse getUserTags(@NonNull GetUserTagsRequest request) {
         log.debug("[gRPC] 获取用户标签列表: userId={}", request.getUserId());
 
@@ -73,10 +71,8 @@ public class SsoGrpcMerchantClient {
 
     /**
      * 检查用户是否拥有指定标签
-     *
-     * @param request protobuf 标签检查请求
-     * @return protobuf 检查结果响应
      */
+    @Cacheable(cacheNames = SsoCacheConstants.CACHE_GRPC_MERCHANT_TAG, key = "'userTag:' + #request.userId + ':' + #request.tagCode")
     public CheckUserHasTagResponse checkUserHasTag(@NonNull CheckUserHasTagRequest request) {
         log.debug("[gRPC] 检查用户标签: userId={}, tagCode={}", request.getUserId(), request.getTagCode());
 
@@ -91,10 +87,8 @@ public class SsoGrpcMerchantClient {
 
     /**
      * 获取最近公告列表
-     *
-     * @param request protobuf 公告查询请求
-     * @return protobuf 公告列表响应
      */
+    @Cacheable(cacheNames = SsoCacheConstants.CACHE_GRPC_ANNOUNCEMENT, key = "'recentAnnouncements'")
     public GetRecentAnnouncementsResponse getRecentAnnouncements(@NonNull GetRecentAnnouncementsRequest request) {
         log.debug("[gRPC] 获取最近公告列表");
 
@@ -109,10 +103,8 @@ public class SsoGrpcMerchantClient {
 
     /**
      * 获取单个公告详情
-     *
-     * @param request protobuf 公告查询请求
-     * @return protobuf 公告详情响应
      */
+    @Cacheable(cacheNames = SsoCacheConstants.CACHE_GRPC_ANNOUNCEMENT, key = "'announcement:' + #request.announcementId")
     public GetAnnouncementResponse getAnnouncement(@NonNull GetAnnouncementRequest request) {
         log.debug("[gRPC] 获取公告详情: announcementId={}", request.getAnnouncementId());
 

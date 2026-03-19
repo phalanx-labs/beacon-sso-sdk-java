@@ -1,6 +1,6 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.IntrospectResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.annotation.InjectData;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +24,7 @@ import java.util.Optional;
  * 数据注入切面
  * <p>
  * 处理带有 {@link InjectData} 注解的方法参数，从请求属性中获取
- * {@link OAuthIntrospection} 对象，并根据注解配置注入相应的字段值。
+ * {@link IntrospectResult} 对象，并根据注解配置注入相应的字段值。
  * </p>
  *
  * <p>
@@ -68,11 +68,11 @@ public class InjectDataAspect {
         }
 
         // 获取令牌自省信息
-        OAuthIntrospection introspection = (OAuthIntrospection) request
+        IntrospectResult introspection = (IntrospectResult) request
                 .getAttribute(BeaconSsoFilter.ATTR_INTROSPECTION);
 
         if (introspection == null) {
-            log.debug("No OAuthIntrospection found in request attributes");
+            log.debug("No IntrospectResult found in request attributes");
         }
 
         // 遍历参数，处理带有 @InjectData 注解的参数
@@ -100,7 +100,7 @@ public class InjectDataAspect {
     private Object resolveInjectValue(
             InjectData annotation,
             Class<?> parameterType,
-            OAuthIntrospection introspection
+            IntrospectResult introspection
     ) {
         // 如果没有自省信息
         if (introspection == null) {
@@ -114,12 +114,12 @@ public class InjectDataAspect {
 
         // 如果未指定字段名，注入整个对象
         if (!StringUtils.hasText(fieldName)) {
-            if (parameterType.isAssignableFrom(OAuthIntrospection.class)) {
+            if (parameterType.isAssignableFrom(IntrospectResult.class)) {
                 return introspection;
             }
             if (annotation.required()) {
                 throw new IllegalArgumentException(
-                        "未指定字段时参数类型必须为 OAuthIntrospection");
+                        "未指定字段时参数类型必须为 IntrospectResult");
             }
             return null;
         }
@@ -142,13 +142,13 @@ public class InjectDataAspect {
     }
 
     /**
-     * 从 OAuthIntrospection 中提取字段值
+     * 从 IntrospectResult 中提取字段值
      *
      * @param fieldName     字段名
      * @param introspection 令牌自省信息
      * @return 字段值
      */
-    private Object extractFieldValue(String fieldName, OAuthIntrospection introspection) {
+    private Object extractFieldValue(String fieldName, IntrospectResult introspection) {
         return switch (fieldName) {
             case "sub" -> introspection.getSub();
             case "username" -> introspection.getUsername();
@@ -161,7 +161,7 @@ public class InjectDataAspect {
             case "iat" -> introspection.getIat();
             case "nbf" -> introspection.getNbf();
             case "aud" -> introspection.getAud();
-            case "active" -> introspection.isActive();
+            case "active" -> introspection.getActive();
             default -> {
                 log.warn("未知的注入字段名 '{}'", fieldName);
                 yield null;

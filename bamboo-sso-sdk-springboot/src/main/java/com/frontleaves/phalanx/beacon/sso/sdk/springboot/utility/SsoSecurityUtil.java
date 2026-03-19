@@ -1,7 +1,7 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.utility;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.IntrospectResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserinfoResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
@@ -55,14 +55,14 @@ public final class SsoSecurityUtil {
      * @param request HTTP 请求
      * @return 包含用户信息的 Optional，如果不存在则返回空的 Optional
      */
-    public static Optional<OAuthUserinfo> getCurrentUserinfo(HttpServletRequest request) {
+    public static Optional<UserinfoResult> getCurrentUserinfo(HttpServletRequest request) {
         // 从请求属性中获取令牌自省信息，然后构建基本用户信息
-        Optional<OAuthIntrospection> introspectionOpt = getCurrentIntrospection(request);
+        Optional<IntrospectResult> introspectionOpt = getCurrentIntrospection(request);
         if (introspectionOpt.isPresent()) {
-            OAuthIntrospection introspection = introspectionOpt.get();
-            OAuthUserinfo userinfo = OAuthUserinfo.builder()
+            IntrospectResult introspection = introspectionOpt.get();
+            UserinfoResult userinfo = UserinfoResult.builder()
                     .sub(introspection.getSub())
-                    .preferredUsername(introspection.getUsername())
+                    .name(introspection.getUsername())
                     .build();
             return Optional.of(userinfo);
         }
@@ -79,10 +79,10 @@ public final class SsoSecurityUtil {
      * @param request HTTP 请求
      * @return 包含令牌自省信息的 Optional，如果不存在则返回空的 Optional
      */
-    public static Optional<OAuthIntrospection> getCurrentIntrospection(HttpServletRequest request) {
+    public static Optional<IntrospectResult> getCurrentIntrospection(HttpServletRequest request) {
         Object introspection = request.getAttribute(BeaconSsoFilter.ATTR_INTROSPECTION);
-        if (introspection instanceof OAuthIntrospection oauthIntrospection) {
-            return Optional.of(oauthIntrospection);
+        if (introspection instanceof IntrospectResult introspectResult) {
+            return Optional.of(introspectResult);
         }
         return Optional.empty();
     }
@@ -98,7 +98,7 @@ public final class SsoSecurityUtil {
      */
     public static boolean isAuthenticated(HttpServletRequest request) {
         return getCurrentIntrospection(request)
-                .map(OAuthIntrospection::isActive)
+                .map(IntrospectResult::getActive)
                 .orElse(false);
     }
 

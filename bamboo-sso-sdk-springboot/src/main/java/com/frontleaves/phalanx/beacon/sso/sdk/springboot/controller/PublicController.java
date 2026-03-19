@@ -50,17 +50,12 @@ public class PublicController {
      */
     @PostMapping("/register/email/code")
     public ResponseEntity<BaseResponse<Void>> sendRegisterEmailCode(
-            @RequestBody @Valid com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.request.SendRegisterEmailCodeRequest request
+            @RequestBody @Valid SendEmailCodeRequest request
     ) {
         log.info("处理发送注册邮箱验证码请求");
 
-        // 构建 SDK Request
-        SendEmailCodeRequest sdkRequest = SendEmailCodeRequest.builder()
-                .email(request.getEmail())
-                .build();
-
         try {
-            ssoPublicApi.sendEmailCode(sdkRequest);
+            ssoPublicApi.sendEmailCode(request);
             return ResultUtil.success("验证码发送成功", null);
         } catch (Exception e) {
             log.warn("Send register email code failed: {}", e.getMessage(), e);

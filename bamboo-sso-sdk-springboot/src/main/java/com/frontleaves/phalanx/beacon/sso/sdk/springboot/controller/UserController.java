@@ -2,12 +2,9 @@ package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoUserApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoHeaderConstants;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoRole;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.SsoUserDetail;
-import com.frontleaves.phalanx.beacon.sso.sdk.grpc.v1.GetUserByIDRequest;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.UserInfo;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.UserRole;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.user.GetUserByIdRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserDetailResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserinfoResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.utility.SsoSecurityUtil;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
@@ -23,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -62,7 +58,7 @@ public class UserController {
      * @return 当前用户信息响应，包含用户名、昵称、邮箱、角色等详细信息
      */
     @GetMapping("/userinfo")
-    public ResponseEntity<BaseResponse<UserInfo>> getCurrentUser(
+    public ResponseEntity<BaseResponse<UserinfoResult>> getCurrentUser(
             @RequestHeader(value = SsoHeaderConstants.AUTHORIZATION, required = false) String authorization,
             HttpServletRequest request
     ) {
@@ -77,8 +73,7 @@ public class UserController {
         }
 
         try {
-            OAuthUserinfo oauthUserinfo = ssoUserApi.getCurrentUser(tokenOpt.get()).block();
-            UserInfo data = this.toUserInfo(oauthUserinfo);
+            UserinfoResult data = ssoUserApi.getCurrentUser(tokenOpt.get()).block();
             return ResultUtil.success("获取用户信息成功", data);
         } catch (Exception e) {
             log.warn("获取当前用户信息失败: {}", e.getMessage(), e);
@@ -96,14 +91,14 @@ public class UserController {
      *
      * @param userId       目标用户 ID（路径参数）
      * @param authorization Authorization 请求头中的 Bearer Token（可选）
-     * @param request      HTTP 请求对象，用于获取 Filter 注入的 Token
+     * @param httpRequest  HTTP 请求对象，用于获取 Filter 注入的 Token
      * @return 指定用户的详细信息响应
      */
     @GetMapping("/{userId}")
-    public ResponseEntity<BaseResponse<UserInfo>> getUserById(
+    public ResponseEntity<BaseResponse<UserDetailResult>> getUserById(
             @PathVariable String userId,
             @RequestHeader(value = SsoHeaderConstants.AUTHORIZATION, required = false) String authorization,
-            HttpServletRequest request
+            HttpServletRequest httpRequest
     ) {
         log.info("Processing get user by ID request: {}", userId);
 
@@ -113,78 +108,23 @@ public class UserController {
 
         Optional<String> tokenOpt = Optional.ofNullable(authorization).filter(StringUtils::hasText);
         if (tokenOpt.isEmpty()) {
-            tokenOpt = SsoSecurityUtil.getCurrentToken(request);
+            tokenOpt = SsoSecurityUtil.getCurrentToken(httpRequest);
         }
         if (tokenOpt.isEmpty()) {
             return ResultUtil.error(ErrorCode.PARAMETER_MISSING, "缺少 Access Token", null);
         }
 
         try {
-            GetUserByIDRequest grpcRequest = GetUserByIDRequest.newBuilder()
-                    .setUserId(userId)
+            GetUserByIdRequest request = GetUserByIdRequest.builder()
+                    .userId(userId)
                     .build();
-            SsoUserDetail userDetail = ssoUserApi.getUserById(tokenOpt.get(), grpcRequest);
-            UserInfo data = this.toUserInfo(userDetail);
+            UserDetailResult data = ssoUserApi.getUserById(tokenOpt.get(), request);
             return ResultUtil.success("获取用户信息成功", data);
         } catch (Exception e) {
             log.warn("按 ID 获取用户信息失败: {}", e.getMessage(), e);
             ErrorCode errorCode = this.mapExceptionToErrorCode(e);
             return ResultUtil.error(errorCode, e.getMessage(), null);
         }
-    }
-
-    private UserInfo toUserInfo(OAuthUserinfo userinfo) {
-        if (userinfo == null) {
-            return null;
-        }
-
-        return UserInfo.builder()
-                .id(userinfo.getSub())
-                .username(userinfo.getPreferredUsername())
-                .nickname(userinfo.getName())
-                .email(userinfo.getEmail())
-                .emailVerified(userinfo.getEmailVerified())
-                .avatar(userinfo.getPicture())
-                .build();
-    }
-
-    private UserInfo toUserInfo(SsoUserDetail detail) {
-        if (detail == null) {
-            return null;
-        }
-
-        List<UserRole> roles = detail.getRoles() == null ? null : detail.getRoles().stream()
-                .map(this::toUserRole)
-                .toList();
-
-        return UserInfo.builder()
-                .id(detail.getId())
-                .username(detail.getUsername())
-                .nickname(detail.getNickname())
-                .email(detail.getEmail())
-                .phone(detail.getPhone())
-                .avatar(detail.getAvatar())
-                .gender(detail.getGender() == 0 ? null : detail.getGender())
-                .birthday(detail.getBirthday())
-                .status(detail.getStatus() == 0 ? null : detail.getStatus())
-                .emailVerified(detail.isEmailVerified())
-                .phoneVerified(detail.isPhoneVerified())
-                .needResetPassword(detail.isNeedResetPassword())
-                .lastLoginAt(detail.getLastLoginAt())
-                .lastLoginIp(detail.getLastLoginIp())
-                .roles(roles)
-                .build();
-    }
-
-    private UserRole toUserRole(SsoRole role) {
-        if (role == null) {
-            return null;
-        }
-        return UserRole.builder()
-                .code(role.getCode())
-                .name(role.getName())
-                .description(role.getDescription())
-                .build();
     }
 
     private ErrorCode mapExceptionToErrorCode(Exception e) {

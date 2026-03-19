@@ -1,5 +1,6 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.api.http;
 
+import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoCacheConstants;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.SsoConfigurationException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
@@ -7,6 +8,7 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserinfoRe
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -69,10 +71,8 @@ public class SsoHttpUserClient {
 
     /**
      * 获取用户信息（SDK Result）
-     *
-     * @param accessToken 访问令牌
-     * @return UserinfoResult 用户信息结果
      */
+    @Cacheable(cacheNames = SsoCacheConstants.CACHE_HTTP_USERINFO, key = "#accessToken")
     public Mono<UserinfoResult> getUserinfoSdk(String accessToken) {
         return Mono.defer(() -> {
             if (!StringUtils.hasText(accessToken)) {

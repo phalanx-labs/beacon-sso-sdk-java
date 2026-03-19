@@ -1,22 +1,22 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoOAuthApi;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.api.UserinfoClient;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.UserinfoRepository;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoUserApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.IntrospectTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.ValidateTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.IntrospectResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.ValidateResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserinfoResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
-
-import java.util.Optional;
 
 /**
  * 用户业务逻辑
  * <p>
  * 提供用户信息获取、令牌自省、令牌验证等业务功能。
- * 通过 {@link UserinfoClient} SPI 实现双传输策略（gRPC 优先 / HTTP 回退）。
- * 结果通过 {@link UserinfoRepository} 进行缓存。
+ * 通过 {@link SsoUserApi} 获取用户信息（支持 gRPC 和 HTTP 双传输）。
+ * 缓存已在 API 层（{@link SsoUserApi} 和 {@link SsoOAuthApi}）自动处理。
  * </p>
  *
  * @author xiao_lfeng
@@ -27,39 +27,33 @@ import java.util.Optional;
 public class UserLogic {
 
     private final SsoOAuthApi ssoOAuthApi;
-    private final UserinfoClient userinfoClient;
-    private final UserinfoRepository userinfoRepository;
+    private final SsoUserApi ssoUserApi;
 
     /**
-     * 获取用户信息（双传输 + 缓存）
+     * 获取用户信息（双传输 + API 层缓存）
      * <p>
-     * 通过 {@link UserinfoClient} SPI 获取用户信息（gRPC 或 HTTP），
-     * 结果缓存到 {@link UserinfoRepository}。
+     * 通过 {@link SsoUserApi} 获取用户信息（gRPC 或 HTTP），
+     * 缓存由 API 层自动处理。
      * </p>
      *
      * @param accessToken 访问令牌
-     * @return OAuthUserinfo 用户信息
+     * @return UserinfoResult 用户信息
      */
-    public Mono<OAuthUserinfo> getUserinfo(String accessToken) {
-        // 先检查缓存
-        Optional<OAuthUserinfo> cached = userinfoRepository.findByAccessToken(accessToken);
-        if (cached.isPresent()) {
-            log.debug("从缓存获取用户信息");
-            return Mono.just(cached.get());
-        }
-
-        return userinfoClient.getUserinfo(accessToken)
-                .doOnNext(userinfo -> userinfoRepository.save(accessToken, userinfo));
+    public Mono<UserinfoResult> getUserinfo(String accessToken) {
+        return ssoUserApi.getCurrentUser(accessToken);
     }
 
     /**
      * 令牌自省（仅 HTTP + 缓存）
      *
      * @param token 要自省的令牌
-     * @return OAuthIntrospection 令牌自省结果
+     * @return IntrospectResult 令牌自省结果
      */
-    public Mono<OAuthIntrospection> introspectToken(String token) {
-        return ssoOAuthApi.introspectToken(token);
+    public Mono<IntrospectResult> introspectToken(String token) {
+        IntrospectTokenRequest request = IntrospectTokenRequest.builder()
+                .token(token)
+                .build();
+        return ssoOAuthApi.introspectToken(request);
     }
 
     /**
@@ -69,7 +63,11 @@ public class UserLogic {
      * @return 如果令牌有效返回 {@code true}，否则返回 {@code false}
      */
     public Mono<Boolean> validateToken(String token) {
-        return ssoOAuthApi.validateToken(token);
+        ValidateTokenRequest request = ValidateTokenRequest.builder()
+                .token(token)
+                .build();
+        return ssoOAuthApi.validateToken(request)
+                .map(ValidateResult::getValid);
     }
 
     /**
@@ -78,9 +76,9 @@ public class UserLogic {
      * @param token 要验证的令牌
      * @return 如果令牌有效返回自省信息，否则返回空
      */
-    public Mono<OAuthIntrospection> validateAndGetIntrospection(String token) {
+    public Mono<IntrospectResult> validateAndGetIntrospection(String token) {
         return this.introspectToken(token)
-                .filter(OAuthIntrospection::isActive)
+                .filter(IntrospectResult::getActive)
                 .onErrorResume(error -> {
                     log.debug("令牌验证返回为空: {}", error.getMessage());
                     return Mono.empty();
@@ -97,7 +95,7 @@ public class UserLogic {
     public Mono<Boolean> isTokenExpiringSoon(String token, long thresholdSeconds) {
         return this.introspectToken(token)
                 .map(introspection -> {
-                    if (!introspection.isActive()) {
+                    if (!introspection.getActive()) {
                         return true;
                     }
                     if (introspection.getExp() == null) {
@@ -122,7 +120,7 @@ public class UserLogic {
     public Mono<Long> getTokenRemainingTime(String token) {
         return this.introspectToken(token)
                 .map(introspection -> {
-                    if (!introspection.isActive() || introspection.getExp() == null) {
+                    if (!introspection.getActive() || introspection.getExp() == null) {
                         return 0L;
                     }
                     long nowInSeconds = System.currentTimeMillis() / 1000;

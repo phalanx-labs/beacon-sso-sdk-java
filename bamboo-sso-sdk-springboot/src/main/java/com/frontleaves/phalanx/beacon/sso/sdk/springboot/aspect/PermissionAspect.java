@@ -1,7 +1,7 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.IntrospectResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.annotation.PermissionVerify;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
 import com.xlf.utility.BaseResponse;
@@ -28,7 +28,7 @@ import java.util.Set;
  * 权限验证切面
  * <p>
  * 拦截带有 {@link PermissionVerify} 注解的方法，从请求属性中获取
- * {@link OAuthIntrospection} 对象，验证用户是否具有所需的权限。
+ * {@link IntrospectResult} 对象，验证用户是否具有所需的权限。
  * 权限验证基于 OAuth 令牌的 scope 字段进行匹配。
  * </p>
  *
@@ -98,7 +98,7 @@ public class PermissionAspect {
         }
 
         // 获取令牌自省信息
-        OAuthIntrospection introspection = (OAuthIntrospection) request
+        IntrospectResult introspection = (IntrospectResult) request
                 .getAttribute(BeaconSsoFilter.ATTR_INTROSPECTION);
 
         if (introspection == null) {

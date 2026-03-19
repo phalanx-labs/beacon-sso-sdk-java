@@ -66,9 +66,6 @@ public class SsoUserApi {
 
     /**
      * 根据用户 ID 获取详细信息（gRPC-only）
-     * <p>
-     * 此方法仅支持 gRPC 通信，未启用 gRPC 时将抛出异常。
-     * </p>
      *
      * @param accessToken 访问令牌
      * @param request     用户查询请求
@@ -119,8 +116,6 @@ public class SsoUserApi {
 
     /**
      * 判断 gRPC 是否启用
-     *
-     * @return 如果 gRPC 启用返回 true，否则返回 false
      */
     private boolean isGrpcEnabled() {
         return properties.getGrpc() != null && properties.getGrpc().isEnabled();

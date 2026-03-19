@@ -13,7 +13,7 @@ import java.io.Serial;
  * </p>
  *
  * @author Xiao Lfeng &lt;xiao_lfeng@icloud.com&gt;
- * @since 1.0.0
+ * @since 0.0.2
  */
 @Getter
 public class SsoConfigurationException extends SsoException {

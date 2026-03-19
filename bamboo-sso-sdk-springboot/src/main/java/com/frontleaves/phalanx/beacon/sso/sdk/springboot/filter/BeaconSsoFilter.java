@@ -2,7 +2,7 @@ package com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthIntrospection;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.IntrospectResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
 import com.xlf.utility.BaseResponse;
@@ -93,12 +93,12 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
 
         try {
             // 2. 调用令牌自省接口验证 Token
-            OAuthIntrospection introspection = userLogic
+            IntrospectResult introspection = userLogic
                     .introspectToken(token)
                     .block();
 
             // 3. 检查令牌是否有效
-            if (introspection == null || !introspection.isActive()) {
+            if (introspection == null || !introspection.getActive()) {
                 log.debug("请求 {} 的令牌不活跃", request.getRequestURI());
                 writeUnauthorizedResponse(response, "令牌无效或已过期");
                 return;

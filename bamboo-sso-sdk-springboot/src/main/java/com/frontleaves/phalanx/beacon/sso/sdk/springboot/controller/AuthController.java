@@ -1,14 +1,9 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthToken;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthUserinfo;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.TokenResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.ValidateResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.AuthLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.OAuthCallback;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.OAuthLogout;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.models.OAuthStatus;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthTokenRepository;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.UserinfoRepository;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
 import com.xlf.utility.mvc.ResultUtil;
@@ -21,8 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.view.RedirectView;
-
-import java.util.Optional;
 
 /**
  * OAuth 认证控制器
@@ -61,8 +54,6 @@ public class AuthController {
 
     private final AuthLogic authLogic;
     private final UserLogic userLogic;
-    private final OAuthTokenRepository tokenRepository;
-    private final UserinfoRepository userinfoRepository;
 
     /**
      * 登录端点 - 重定向到 SSO 授权页面
@@ -98,7 +89,7 @@ public class AuthController {
      * @return 包含令牌信息或错误的标准响应
      */
     @GetMapping("/callback")
-    public ResponseEntity<BaseResponse<OAuthCallback>> callback(
+    public ResponseEntity<BaseResponse<TokenResult>> callback(
             @RequestParam(value = "code", required = false) String code,
             @RequestParam(value = "state", required = false) String state,
             @RequestParam(value = "error", required = false) String error,
@@ -121,26 +112,15 @@ public class AuthController {
 
         try {
             // 处理回调，交换令牌
-            OAuthToken token = authLogic.handleCallback(code, state).block();
+            TokenResult token = authLogic.handleCallback(code, state).block();
 
             if (token != null) {
                 // 存储令牌到 Session
                 session.setAttribute(SESSION_TOKEN_KEY, token);
 
-                // 存储令牌到 Repository（可选，用于分布式会话）
-                String sessionKey = getSessionKey(session);
-                tokenRepository.save(sessionKey, token);
-
                 log.info("OAuth authentication successful, token stored in session");
 
-                // 构建响应 DTO（不返回 refresh_token 给前端，避免安全风险）
-                OAuthCallback data = OAuthCallback.builder()
-                        .tokenType(token.getTokenType())
-                        .expiresIn(token.getExpiresIn())
-                        .scope(token.getScope())
-                        .build();
-
-                return ResultUtil.success("OAuth 认证成功", data);
+                return ResultUtil.success("OAuth 认证成功", token);
             } else {
                 log.error("OAuth token exchange returned null");
                 return ResultUtil.error(ErrorCode.OPERATION_FAILED, "授权码交换令牌失败", null);
@@ -163,22 +143,17 @@ public class AuthController {
      * @return 登出结果响应
      */
     @GetMapping("/logout")
-    public ResponseEntity<BaseResponse<OAuthLogout>> logout(HttpSession session) {
+    public ResponseEntity<BaseResponse<Void>> logout(HttpSession session) {
         log.info("Processing logout request");
 
         // 从 Session 获取 Token
-        OAuthToken token = (OAuthToken) session.getAttribute(SESSION_TOKEN_KEY);
-        String sessionKey = getSessionKey(session);
-
-        boolean revoked = false;
+        TokenResult token = (TokenResult) session.getAttribute(SESSION_TOKEN_KEY);
 
         if (token != null) {
             // 撤销访问令牌
             if (token.getAccessToken() != null) {
-                revoked = Boolean.TRUE.equals(
-                        authLogic.revokeToken(token.getAccessToken(), "access_token").block()
-                );
-                log.debug("Access token revoked: {}", revoked);
+                authLogic.revokeToken(token.getAccessToken(), "access_token").block();
+                log.debug("Access token revoked");
             }
 
             // 撤销刷新令牌
@@ -192,17 +167,12 @@ public class AuthController {
         session.removeAttribute(SESSION_TOKEN_KEY);
         session.removeAttribute(SESSION_USER_KEY);
 
-        // 清除 Repository 缓存
-        tokenRepository.delete(sessionKey);
-        userinfoRepository.delete(sessionKey);
-
-        // 可选：使整个会话失效
+        // 使整个会话失效
         session.invalidate();
 
-        log.info("Logout completed, token revoked: {}", revoked);
+        log.info("Logout completed");
 
-        OAuthLogout data = OAuthLogout.of(revoked);
-        return ResultUtil.success("登出成功", data);
+        return ResultUtil.success("登出成功", null);
     }
 
     /**
@@ -215,67 +185,36 @@ public class AuthController {
      * @return 认证状态响应
      */
     @GetMapping("/status")
-    public ResponseEntity<BaseResponse<OAuthStatus>> status(HttpSession session) {
+    public ResponseEntity<BaseResponse<ValidateResult>> status(HttpSession session) {
         log.debug("Checking authentication status");
 
         // 从 Session 获取 Token
-        OAuthToken token = (OAuthToken) session.getAttribute(SESSION_TOKEN_KEY);
-        String sessionKey = getSessionKey(session);
-
-        // 如果 Session 中没有，尝试从 Repository 获取
-        if (token == null) {
-            Optional<OAuthToken> tokenOpt = tokenRepository.findByKey(sessionKey);
-            token = tokenOpt.orElse(null);
-        }
+        TokenResult token = (TokenResult) session.getAttribute(SESSION_TOKEN_KEY);
 
         if (token != null && token.getAccessToken() != null) {
             // 检查令牌是否过期
             boolean isExpired = isTokenExpired(token);
 
             if (!isExpired) {
-                // 尝试获取用户信息
-                OAuthStatus.UserInfo userInfo = null;
-                Optional<OAuthUserinfo> userinfoOpt = userinfoRepository.findByAccessToken(token.getAccessToken());
-                if (userinfoOpt.isPresent()) {
-                    OAuthUserinfo userinfo = userinfoOpt.get();
-                    userInfo = OAuthStatus.UserInfo.builder()
-                            .sub(userinfo.getSub())
-                            .name(userinfo.getName())
-                            .preferredUsername(userinfo.getPreferredUsername())
-                            .email(userinfo.getEmail())
-                            .picture(userinfo.getPicture())
-                            .build();
+                // 调用 validate 接口验证 token
+                try {
+                    ValidateResult validateResult = authLogic.validateToken(token.getAccessToken()).block();
+                    log.debug("User is authenticated");
+                    return ResultUtil.success("用户已认证", validateResult);
+                } catch (Exception e) {
+                    log.debug("Token validation failed: {}", e.getMessage());
+                    // 验证失败，清除令牌
+                    session.removeAttribute(SESSION_TOKEN_KEY);
                 }
-
-                OAuthStatus data = OAuthStatus.authenticated(
-                        token.getTokenType(),
-                        calculateRemainingExpiresIn(token),
-                        userInfo
-                );
-
-                log.debug("User is authenticated");
-                return ResultUtil.success("用户已认证", data);
             } else {
                 log.debug("Token has expired");
                 // 清除过期的令牌
                 session.removeAttribute(SESSION_TOKEN_KEY);
-                tokenRepository.delete(sessionKey);
             }
         }
 
-        OAuthStatus data = OAuthStatus.notAuthenticated("未认证或令牌已过期");
         log.debug("User is not authenticated");
-        return ResultUtil.success("获取认证状态成功", data);
-    }
-
-    /**
-     * 获取会话键
-     *
-     * @param session HTTP 会话
-     * @return 会话键字符串
-     */
-    private String getSessionKey(HttpSession session) {
-        return "session:" + session.getId();
+        return ResultUtil.success("未认证或令牌已过期", null);
     }
 
     /**
@@ -284,7 +223,7 @@ public class AuthController {
      * @param token OAuth 令牌
      * @return 如果令牌已过期返回 true
      */
-    private boolean isTokenExpired(OAuthToken token) {
+    private boolean isTokenExpired(TokenResult token) {
         if (token == null || token.getCreatedAt() <= 0) {
             return true;
         }
@@ -300,7 +239,7 @@ public class AuthController {
      * @param token OAuth 令牌
      * @return 剩余过期时间（秒），如果已过期返回 0
      */
-    private long calculateRemainingExpiresIn(OAuthToken token) {
+    private long calculateRemainingExpiresIn(TokenResult token) {
         if (token == null || token.getCreatedAt() <= 0) {
             return 0;
         }

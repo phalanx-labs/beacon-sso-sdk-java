@@ -5,12 +5,18 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.OAuthStateException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.SsoConfigurationException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthState;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.models.OAuthToken;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.entity.OAuthState;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.RevokeTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.AuthorizationUrlRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.ExchangeCodeRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.RefreshTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.oauth.ValidateTokenRequest;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.AuthorizationUrlResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.TokenResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.ValidateResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.PkceUtil;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthStateRepository;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
@@ -52,7 +58,6 @@ public class AuthLogic {
     private final BeaconSsoProperties properties;
     private final SsoOAuthApi ssoOAuthApi;
     private final OAuthStateRepository stateRepository;
-    private final OAuthTokenRepository tokenRepository;
 
     /**
      * 生成授权 URL（含 PKCE）
@@ -97,8 +102,14 @@ public class AuthLogic {
             stateRepository.save(state, oauthState);
             log.debug("已生成 OAuth state: {}", maskState(state));
 
-            // 通过 AuthApi 构建授权 URL（纯计算）
-            return ssoOAuthApi.generateAuthorizationUrl(state, codeChallenge, scope);
+            // 通过 SsoOAuthApi 构建授权 URL
+            AuthorizationUrlRequest request = AuthorizationUrlRequest.builder()
+                    .state(state)
+                    .codeChallenge(codeChallenge)
+                    .scope(scope)
+                    .build();
+            AuthorizationUrlResult result = ssoOAuthApi.generateAuthorizationUrl(request);
+            return result.getUrl();
         });
     }
 
@@ -107,9 +118,9 @@ public class AuthLogic {
      *
      * @param code  授权码
      * @param state 状态参数
-     * @return OAuthToken 令牌响应
+     * @return TokenResult 令牌响应
      */
-    public Mono<OAuthToken> handleCallback(String code, String state) {
+    public Mono<TokenResult> handleCallback(String code, String state) {
         return Mono.defer(() -> {
             // 验证参数
             if (!StringUtils.hasText(code)) {
@@ -150,7 +161,12 @@ public class AuthLogic {
                         }
 
                         // 使用授权码交换令牌
-                        return ssoOAuthApi.exchangeCodeForToken(code, oauthState)
+                        ExchangeCodeRequest request = ExchangeCodeRequest.builder()
+                                .code(code)
+                                .redirectUri(oauthState.getRedirectUri())
+                                .codeVerifier(oauthState.getCodeVerifier())
+                                .build();
+                        return ssoOAuthApi.exchangeCodeForToken(request)
                                 .doOnSuccess(token -> {
                                     // 成功后删除已使用的 state
                                     stateRepository.delete(state);
@@ -169,10 +185,13 @@ public class AuthLogic {
      * 刷新 token
      *
      * @param refreshToken 刷新令牌
-     * @return 新的 OAuthToken 令牌响应
+     * @return 新的 TokenResult 令牌响应
      */
-    public Mono<OAuthToken> refreshToken(String refreshToken) {
-        return ssoOAuthApi.refreshToken(refreshToken);
+    public Mono<TokenResult> refreshToken(String refreshToken) {
+        RefreshTokenRequest request = RefreshTokenRequest.builder()
+                .refreshToken(refreshToken)
+                .build();
+        return ssoOAuthApi.refreshToken(request);
     }
 
     /**
@@ -182,7 +201,7 @@ public class AuthLogic {
      * @return 如果撤销成功返回 {@code true}，否则返回 {@code false}
      */
     public Mono<Boolean> revokeToken(String token) {
-        return ssoOAuthApi.revokeToken(token, "access_token");
+        return revokeToken(token, "access_token");
     }
 
     /**
@@ -193,7 +212,24 @@ public class AuthLogic {
      * @return 如果撤销成功返回 {@code true}，否则返回 {@code false}
      */
     public Mono<Boolean> revokeToken(String token, String tokenType) {
-        return ssoOAuthApi.revokeToken(token, tokenType);
+        RevokeTokenRequest request = RevokeTokenRequest.builder()
+                .token(token)
+                .tokenTypeHint(tokenType)
+                .build();
+        return ssoOAuthApi.revokeToken(request);
+    }
+
+    /**
+     * 验证 token
+     *
+     * @param token 要验证的令牌
+     * @return ValidateResult 验证结果
+     */
+    public Mono<ValidateResult> validateToken(String token) {
+        ValidateTokenRequest request = ValidateTokenRequest.builder()
+                .token(token)
+                .build();
+        return ssoOAuthApi.validateToken(request);
     }
 
     /**

@@ -34,9 +34,6 @@ public class SsoOAuthApi {
 
     /**
      * 生成授权 URL
-     *
-     * @param request 授权 URL 请求
-     * @return 授权 URL 结果
      */
     public AuthorizationUrlResult generateAuthorizationUrl(AuthorizationUrlRequest request) {
         log.debug("[聚合层] 生成授权 URL");
@@ -45,9 +42,6 @@ public class SsoOAuthApi {
 
     /**
      * 使用授权码交换令牌
-     *
-     * @param request 授权码交换请求
-     * @return 令牌结果
      */
     public Mono<TokenResult> exchangeCodeForToken(ExchangeCodeRequest request) {
         log.debug("[聚合层] 使用授权码交换令牌");
@@ -56,9 +50,6 @@ public class SsoOAuthApi {
 
     /**
      * 刷新令牌
-     *
-     * @param request 刷新令牌请求
-     * @return 令牌结果
      */
     public Mono<TokenResult> refreshToken(RefreshTokenRequest request) {
         log.debug("[聚合层] 刷新令牌");
@@ -67,9 +58,6 @@ public class SsoOAuthApi {
 
     /**
      * 撤销令牌
-     *
-     * @param request 撤销令牌请求
-     * @return 如果撤销成功返回 {@code true}，否则返回 {@code false}
      */
     public Mono<Boolean> revokeToken(RevokeTokenRequest request) {
         log.debug("[聚合层] 撤销令牌");
@@ -78,9 +66,6 @@ public class SsoOAuthApi {
 
     /**
      * 令牌自省
-     *
-     * @param request 令牌自省请求
-     * @return 令牌自省结果
      */
     public Mono<IntrospectResult> introspectToken(IntrospectTokenRequest request) {
         log.debug("[聚合层] 令牌自省");
@@ -89,9 +74,6 @@ public class SsoOAuthApi {
 
     /**
      * 验证令牌有效性
-     *
-     * @param request 令牌验证请求
-     * @return 令牌验证结果
      */
     public Mono<ValidateResult> validateToken(ValidateTokenRequest request) {
         log.debug("[聚合层] 验证令牌有效性");

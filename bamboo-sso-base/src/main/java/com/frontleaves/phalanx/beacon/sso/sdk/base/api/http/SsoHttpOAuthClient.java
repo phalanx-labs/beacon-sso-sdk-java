@@ -1,6 +1,7 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.base.api.http;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoCacheConstants;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.SsoConfigurationException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
@@ -23,6 +24,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -108,7 +110,7 @@ public class SsoHttpOAuthClient {
      * @param scope         作用域
      * @return 授权 URL 字符串
      */
-    private String buildAuthorizationUrl(String state, String codeChallenge, String scope) {
+    private @NonNull String buildAuthorizationUrl(String state, String codeChallenge, String scope) {
         return UriComponentsBuilder.fromUriString(properties.getBaseUrl())
                 .path(properties.getEndpoints().getAuthUri())
                 .queryParam("response_type", "code")
@@ -177,7 +179,7 @@ public class SsoHttpOAuthClient {
      * @param request 授权 URL 请求
      * @return 授权 URL 结果
      */
-    public AuthorizationUrlResult generateAuthorizationUrlSdk(AuthorizationUrlRequest request) {
+    public AuthorizationUrlResult generateAuthorizationUrlSdk(@NonNull AuthorizationUrlRequest request) {
         String codeVerifier = PkceUtil.generateCodeVerifier();
         String codeChallenge = PkceUtil.generateCodeChallenge(codeVerifier);
         String scope = StringUtils.hasText(request.getScope()) ? request.getScope() : "openid profile email phone";
@@ -221,15 +223,7 @@ public class SsoHttpOAuthClient {
                     .uri(tokenUrl)
                     .body(BodyInserters.fromFormData(formData))
                     .retrieve()
-                    .bodyToMono(TokenResponseDto.class)
-                    .map(dto -> TokenResult.builder()
-                            .accessToken(dto.accessToken)
-                            .tokenType(dto.tokenType != null ? dto.tokenType : "Bearer")
-                            .expiresIn(dto.expiresIn)
-                            .refreshToken(dto.refreshToken)
-                            .scope(dto.scope)
-                            .createdAt(System.currentTimeMillis())
-                            .build())
+                    .bodyToMono(TokenResult.class)
                     .onErrorMap(error -> {
                         log.error("[HTTP] 授权码交换失败: {}", error.getMessage());
                         if (error instanceof TokenException) {
@@ -281,15 +275,7 @@ public class SsoHttpOAuthClient {
                     .uri(tokenUrl)
                     .body(BodyInserters.fromFormData(formData))
                     .retrieve()
-                    .bodyToMono(TokenResponseDto.class)
-                    .map(dto -> TokenResult.builder()
-                            .accessToken(dto.accessToken)
-                            .tokenType(dto.tokenType != null ? dto.tokenType : "Bearer")
-                            .expiresIn(dto.expiresIn)
-                            .refreshToken(dto.refreshToken)
-                            .scope(dto.scope)
-                            .createdAt(System.currentTimeMillis())
-                            .build())
+                    .bodyToMono(TokenResult.class)
                     .onErrorMap(error -> {
                         log.error("[HTTP] 刷新令牌失败: {}", error.getMessage());
                         if (error instanceof TokenException) {
@@ -311,16 +297,14 @@ public class SsoHttpOAuthClient {
      * @param request 撤销令牌请求
      * @return 如果撤销成功返回 {@code true}，否则返回 {@code false}
      */
-    public Mono<Boolean> revokeTokenSdk(RevokeTokenRequest request) {
+    public Mono<Boolean> revokeTokenSdk(@NonNull RevokeTokenRequest request) {
         return revokeToken(request.getToken(), request.getTokenTypeHint());
     }
 
     /**
      * 令牌自省（SDK Request/Result）
-     *
-     * @param request 令牌自省请求
-     * @return 令牌自省结果
      */
+    @Cacheable(cacheNames = SsoCacheConstants.CACHE_HTTP_INTROSPECTION, key = "#request.token")
     public Mono<IntrospectResult> introspectTokenSdk(IntrospectTokenRequest request) {
         return Mono.defer(() -> {
             if (!StringUtils.hasText(request.getToken())) {
@@ -350,21 +334,7 @@ public class SsoHttpOAuthClient {
                     .uri(introspectUrl)
                     .body(BodyInserters.fromFormData(formData))
                     .retrieve()
-                    .bodyToMono(IntrospectResponseDto.class)
-                    .map(dto -> IntrospectResult.builder()
-                            .active(dto.active)
-                            .scope(dto.scope)
-                            .clientId(dto.clientId)
-                            .username(dto.username)
-                            .tokenType(dto.tokenType)
-                            .exp(dto.exp)
-                            .iat(dto.iat)
-                            .nbf(dto.nbf)
-                            .sub(dto.sub)
-                            .aud(dto.aud)
-                            .iss(dto.iss)
-                            .jti(dto.jti)
-                            .build())
+                    .bodyToMono(IntrospectResult.class)
                     .onErrorMap(error -> {
                         log.error("[HTTP] 内省令牌失败: {}", error.getMessage());
                         if (error instanceof TokenException tokenException) {
@@ -382,11 +352,9 @@ public class SsoHttpOAuthClient {
 
     /**
      * 验证令牌有效性（SDK Request/Result）
-     *
-     * @param request 令牌验证请求
-     * @return 令牌验证结果
      */
-    public Mono<ValidateResult> validateTokenSdk(ValidateTokenRequest request) {
+    @Cacheable(cacheNames = SsoCacheConstants.CACHE_HTTP_INTROSPECTION, key = "#request.token")
+    public Mono<ValidateResult> validateTokenSdk(@NonNull ValidateTokenRequest request) {
         if (request.getToken() == null || request.getTokenType() == null) {
             return Mono.just(ValidateResult.builder()
                     .valid(false)
@@ -408,45 +376,5 @@ public class SsoHttpOAuthClient {
                             .message("令牌验证失败: " + error.getMessage())
                             .build());
                 });
-    }
-
-    // ========== 内部 DTO 类 ==========
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    private static class TokenResponseDto {
-        @JsonProperty("access_token")
-        private String accessToken;
-        @JsonProperty("token_type")
-        private String tokenType;
-        @JsonProperty("expires_in")
-        private Long expiresIn;
-        @JsonProperty("refresh_token")
-        private String refreshToken;
-        @JsonProperty("scope")
-        private String scope;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    private static class IntrospectResponseDto {
-        private Boolean active;
-        private String scope;
-        @JsonProperty("client_id")
-        private String clientId;
-        private String username;
-        @JsonProperty("token_type")
-        private String tokenType;
-        private Long exp;
-        private Long iat;
-        private Long nbf;
-        private String sub;
-        private String aud;
-        private String iss;
-        private String jti;
     }
 }
