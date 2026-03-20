@@ -160,9 +160,48 @@ public class AutoConfiguration implements SmartInitializingSingleton {
         if (currentValue != null && currentValue.startsWith("/")) {
             Object value = wellKnown.get(field);
             if (value instanceof String uri && StringUtils.hasText(uri)) {
-                setter.accept(endpoints, uri);
-                log.debug("从 Well-Known 更新端点 {}: {}", field, uri);
+                // 从完整 URL 中提取路径部分，避免与 baseUrl 重复拼接
+                String path = extractPathFromUri(uri, properties.getBaseUrl());
+                setter.accept(endpoints, path);
+                log.debug("从 Well-Known 更新端点 {}: {} -> {}", field, uri, path);
             }
+        }
+    }
+
+    /**
+     * 从完整 URI 中提取相对路径
+     * <p>
+     * 如果 URI 是以 baseUrl 开头的完整 URL，则提取相对路径部分；
+     * 否则返回原始 URI（可能是相对路径或其他服务器的完整 URL）。
+     * </p>
+     *
+     * @param uri     完整或相对 URI
+     * @param baseUrl 基础 URL
+     * @return 相对路径
+     */
+    private String extractPathFromUri(String uri, String baseUrl) {
+        if (!uri.startsWith("http://") && !uri.startsWith("https://")) {
+            // 已经是相对路径，直接返回
+            return uri;
+        }
+
+        // 如果 URI 以 baseUrl 开头，提取相对路径
+        if (uri.startsWith(baseUrl)) {
+            return uri.substring(baseUrl.length());
+        }
+
+        // 尝试从完整 URL 中提取路径部分
+        try {
+            java.net.URL url = new java.net.URL(uri);
+            String path = url.getPath();
+            String query = url.getQuery();
+            if (StringUtils.hasText(query)) {
+                path = path + "?" + query;
+            }
+            return path;
+        } catch (Exception e) {
+            log.warn("无法解析 URI {}: {}", uri, e.getMessage());
+            return uri;
         }
     }
 }

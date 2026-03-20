@@ -123,16 +123,34 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * 默认排除路径（无需令牌验证的公开接口）
+     */
+    private static final List<String> DEFAULT_EXCLUDE_URLS = List.of(
+            "/api/v1/account/login/**",
+            "/api/v1/account/register/**",
+            "/api/v1/public/**",
+            "/api/v1/auth/**"
+    );
+
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
-        List<String> excludeUrls = properties.getExcludeUrls();
-        if (excludeUrls == null || excludeUrls.isEmpty()) {
-            return false;
+        String requestPath = request.getRequestURI();
+
+        // 1. 检查默认排除路径
+        if (DEFAULT_EXCLUDE_URLS.stream()
+                .anyMatch(pattern -> pathMatcher.match(pattern, requestPath))) {
+            return true;
         }
 
-        String requestPath = request.getRequestURI();
-        return excludeUrls.stream()
-                .anyMatch(pattern -> pathMatcher.match(pattern, requestPath));
+        // 2. 检查用户配置的排除路径
+        List<String> excludeUrls = properties.getExcludeUrls();
+        if (excludeUrls != null && !excludeUrls.isEmpty()) {
+            return excludeUrls.stream()
+                    .anyMatch(pattern -> pathMatcher.match(pattern, requestPath));
+        }
+
+        return false;
     }
 
     /**

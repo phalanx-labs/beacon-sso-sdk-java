@@ -47,7 +47,7 @@ import java.util.Optional;
  */
 @Slf4j
 @RestController
-@RequestMapping("${beacon.sso.account-path:/account}")
+@RequestMapping("${beacon.sso.account-path:/api/v1/account}")
 @RequiredArgsConstructor
 public class AccountController {
 

@@ -46,7 +46,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("${beacon.sso.merchant-path:/merchant}")
+@RequestMapping("${beacon.sso.merchant-path:/api/v1/merchant}")
 @RequiredArgsConstructor
 public class MerchantController {
 

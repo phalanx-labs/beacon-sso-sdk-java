@@ -38,7 +38,7 @@ import org.springframework.web.servlet.view.RedirectView;
  */
 @Slf4j
 @RestController
-@RequestMapping("${beacon.sso.oauth-path:/oauth}")
+@RequestMapping("${beacon.sso.oauth-path:/api/v1/auth}")
 @RequiredArgsConstructor
 public class AuthController {
 
