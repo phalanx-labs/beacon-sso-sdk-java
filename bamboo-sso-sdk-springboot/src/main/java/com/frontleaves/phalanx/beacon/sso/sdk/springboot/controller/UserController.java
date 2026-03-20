@@ -1,6 +1,7 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoUserApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoHeaderConstants;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.user.GetUserByIdRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserDetailResult;
@@ -44,7 +45,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final SsoUserApi ssoUserApi;
+    private final SsoApi ssoApi;
 
     /**
      * 获取当前用户信息
@@ -73,7 +74,7 @@ public class UserController {
         }
 
         try {
-            UserinfoResult data = ssoUserApi.getCurrentUser(tokenOpt.get()).block();
+            UserinfoResult data = ssoApi.user().getCurrentUser(tokenOpt.get()).block();
             return ResultUtil.success("获取用户信息成功", data);
         } catch (Exception e) {
             log.warn("获取当前用户信息失败: {}", e.getMessage(), e);
@@ -118,7 +119,7 @@ public class UserController {
             GetUserByIdRequest request = GetUserByIdRequest.builder()
                     .userId(userId)
                     .build();
-            UserDetailResult data = ssoUserApi.getUserById(tokenOpt.get(), request);
+            UserDetailResult data = ssoApi.user().getUserById(tokenOpt.get(), request);
             return ResultUtil.success("获取用户信息成功", data);
         } catch (Exception e) {
             log.warn("按 ID 获取用户信息失败: {}", e.getMessage(), e);

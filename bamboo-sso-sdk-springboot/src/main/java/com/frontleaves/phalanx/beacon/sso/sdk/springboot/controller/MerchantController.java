@@ -1,6 +1,7 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoMerchantApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.CheckUserHasTagRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.GetAnnouncementRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.merchant.GetMerchantTagsRequest;
@@ -49,7 +50,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MerchantController {
 
-    private final SsoMerchantApi ssoMerchantApi;
+    private final SsoApi ssoApi;
 
     /**
      * 获取商户标签列表
@@ -72,7 +73,7 @@ public class MerchantController {
                 .build();
 
         try {
-            List<MerchantTagResult> tags = ssoMerchantApi.getMerchantTags(sdkRequest);
+            List<MerchantTagResult> tags = ssoApi.merchant().getMerchantTags(sdkRequest);
             return ResultUtil.success("获取商户标签成功", tags.isEmpty() ? null : tags);
         } catch (Exception e) {
             log.warn("Get merchant tags failed: {}", e.getMessage(), e);
@@ -106,7 +107,7 @@ public class MerchantController {
                 .build();
 
         try {
-            List<MerchantTagResult> tags = ssoMerchantApi.getUserTags(sdkRequest);
+            List<MerchantTagResult> tags = ssoApi.merchant().getUserTags(sdkRequest);
             return ResultUtil.success("获取用户标签成功", tags.isEmpty() ? null : tags);
         } catch (Exception e) {
             log.warn("Get user tags failed: {}", e.getMessage(), e);
@@ -146,7 +147,7 @@ public class MerchantController {
                 .build();
 
         try {
-            boolean hasTag = ssoMerchantApi.checkUserHasTag(sdkRequest);
+            boolean hasTag = ssoApi.merchant().checkUserHasTag(sdkRequest);
             return ResultUtil.success("检查用户标签成功", hasTag);
         } catch (Exception e) {
             log.warn("Check user has tag failed: {}", e.getMessage(), e);
@@ -179,7 +180,7 @@ public class MerchantController {
                 .build();
 
         try {
-            RecentAnnouncementsResult data = ssoMerchantApi.getRecentAnnouncements(sdkRequest);
+            RecentAnnouncementsResult data = ssoApi.merchant().getRecentAnnouncements(sdkRequest);
             return ResultUtil.success("获取最近公告成功", data);
         } catch (Exception e) {
             log.warn("Get recent announcements failed: {}", e.getMessage(), e);
@@ -213,7 +214,7 @@ public class MerchantController {
                 .build();
 
         try {
-            AnnouncementResult data = ssoMerchantApi.getAnnouncement(sdkRequest);
+            AnnouncementResult data = ssoApi.merchant().getAnnouncement(sdkRequest);
             return ResultUtil.success("获取公告详情成功", data);
         } catch (Exception e) {
             log.warn("Get announcement failed: {}", e.getMessage(), e);

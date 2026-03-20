@@ -1,6 +1,6 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic;
 
-import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoOAuthApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoErrorCode;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.OAuthStateException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.SsoConfigurationException;
@@ -56,7 +56,7 @@ public class AuthLogic {
     private static final Base64.Encoder BASE64_URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
 
     private final BeaconSsoProperties properties;
-    private final SsoOAuthApi ssoOAuthApi;
+    private final SsoApi ssoApi;
     private final OAuthStateRepository stateRepository;
 
     /**
@@ -108,7 +108,7 @@ public class AuthLogic {
                     .codeChallenge(codeChallenge)
                     .scope(scope)
                     .build();
-            AuthorizationUrlResult result = ssoOAuthApi.generateAuthorizationUrl(request);
+            AuthorizationUrlResult result = ssoApi.oauth().generateAuthorizationUrl(request);
             return result.getUrl();
         });
     }
@@ -166,7 +166,7 @@ public class AuthLogic {
                                 .redirectUri(oauthState.getRedirectUri())
                                 .codeVerifier(oauthState.getCodeVerifier())
                                 .build();
-                        return ssoOAuthApi.exchangeCodeForToken(request)
+                        return ssoApi.oauth().exchangeCodeForToken(request)
                                 .doOnSuccess(token -> {
                                     // 成功后删除已使用的 state
                                     stateRepository.delete(state);
@@ -191,7 +191,7 @@ public class AuthLogic {
         RefreshTokenRequest request = RefreshTokenRequest.builder()
                 .refreshToken(refreshToken)
                 .build();
-        return ssoOAuthApi.refreshToken(request);
+        return ssoApi.oauth().refreshToken(request);
     }
 
     /**
@@ -216,7 +216,7 @@ public class AuthLogic {
                 .token(token)
                 .tokenTypeHint(tokenType)
                 .build();
-        return ssoOAuthApi.revokeToken(request);
+        return ssoApi.oauth().revokeToken(request);
     }
 
     /**
@@ -229,7 +229,7 @@ public class AuthLogic {
         ValidateTokenRequest request = ValidateTokenRequest.builder()
                 .token(token)
                 .build();
-        return ssoOAuthApi.validateToken(request);
+        return ssoApi.oauth().validateToken(request);
     }
 
     /**

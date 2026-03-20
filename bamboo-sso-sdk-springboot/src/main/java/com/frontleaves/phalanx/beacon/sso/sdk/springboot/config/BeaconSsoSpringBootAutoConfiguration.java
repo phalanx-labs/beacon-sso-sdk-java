@@ -1,20 +1,12 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoAccountApi;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoMerchantApi;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoOAuthApi;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoPublicApi;
-import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoUserApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.config.AutoConfiguration;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.InjectDataAspect;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.PermissionAspect;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.AccountController;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.AuthController;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.MerchantController;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.PublicController;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.UserController;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.*;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.AuthLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
@@ -74,30 +66,32 @@ public class BeaconSsoSpringBootAutoConfiguration {
      * 注册 AuthLogic Bean
      *
      * @param properties      SSO 配置属性
-     * @param ssoOAuthApi     HTTP OAuth 客户端
+     * @param ssoApi          SSO API 门面类
      * @param stateRepository OAuth State 存储库
      * @return AuthLogic 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    public AuthLogic authLogic(BeaconSsoProperties properties,
-                               SsoOAuthApi ssoOAuthApi,
-                               OAuthStateRepository stateRepository) {
-        return new AuthLogic(properties, ssoOAuthApi, stateRepository);
+    @ConditionalOnBean(SsoApi.class)
+    public AuthLogic authLogic(
+            BeaconSsoProperties properties,
+            SsoApi ssoApi,
+            OAuthStateRepository stateRepository
+    ) {
+        return new AuthLogic(properties, ssoApi, stateRepository);
     }
 
     /**
      * 注册 UserLogic Bean
      *
-     * @param ssoOAuthApi OAuth 客户端
-     * @param ssoUserApi  用户操作 API
+     * @param ssoApi SSO API 门面类
      * @return UserLogic 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    public UserLogic userLogic(SsoOAuthApi ssoOAuthApi,
-                               SsoUserApi ssoUserApi) {
-        return new UserLogic(ssoOAuthApi, ssoUserApi);
+    @ConditionalOnBean(SsoApi.class)
+    public UserLogic userLogic(SsoApi ssoApi) {
+        return new UserLogic(ssoApi);
     }
 
     // ==================== Aspect ====================
@@ -163,65 +157,53 @@ public class BeaconSsoSpringBootAutoConfiguration {
 
     /**
      * 创建 UserController Bean
-     * <p>
-     * 仅在启用 gRPC 且存在 SsoUserApi Bean 时创建。
-     * </p>
      *
-     * @param ssoUserApi 用户操作 API
+     * @param ssoApi SSO API 门面类
      * @return UserController 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(SsoUserApi.class)
-    public UserController userController(SsoUserApi ssoUserApi) {
-        return new UserController(ssoUserApi);
+    @ConditionalOnBean(SsoApi.class)
+    public UserController userController(SsoApi ssoApi) {
+        return new UserController(ssoApi);
     }
 
     /**
      * 创建 AccountController Bean
-     * <p>
-     * 仅在启用 gRPC 且存在 SsoAccountApi Bean 时创建。
-     * </p>
      *
-     * @param ssoAccountApi 账户操作 API
+     * @param ssoApi SSO API 门面类
      * @return AccountController 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(SsoAccountApi.class)
-    public AccountController accountController(SsoAccountApi ssoAccountApi) {
-        return new AccountController(ssoAccountApi);
+    @ConditionalOnBean(SsoApi.class)
+    public AccountController accountController(SsoApi ssoApi) {
+        return new AccountController(ssoApi);
     }
 
     /**
      * 创建 PublicController Bean
-     * <p>
-     * 仅在启用 gRPC 且存在 SsoPublicApi Bean 时创建。
-     * </p>
      *
-     * @param ssoPublicApi 公共操作 API
+     * @param ssoApi SSO API 门面类
      * @return PublicController 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(SsoPublicApi.class)
-    public PublicController publicController(SsoPublicApi ssoPublicApi) {
-        return new PublicController(ssoPublicApi);
+    @ConditionalOnBean(SsoApi.class)
+    public PublicController publicController(SsoApi ssoApi) {
+        return new PublicController(ssoApi);
     }
 
     /**
      * 创建 MerchantController Bean
-     * <p>
-     * 仅在启用 gRPC 且存在 SsoMerchantApi Bean 时创建。
-     * </p>
      *
-     * @param ssoMerchantApi 商户操作 API
+     * @param ssoApi SSO API 门面类
      * @return MerchantController 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(SsoMerchantApi.class)
-    public MerchantController merchantController(SsoMerchantApi ssoMerchantApi) {
-        return new MerchantController(ssoMerchantApi);
+    @ConditionalOnBean(SsoApi.class)
+    public MerchantController merchantController(SsoApi ssoApi) {
+        return new MerchantController(ssoApi);
     }
 }

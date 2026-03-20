@@ -1,6 +1,7 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.api.SsoAccountApi;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoHeaderConstants;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.ChangePasswordRequest;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.request.account.PasswordLoginRequest;
@@ -50,7 +51,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AccountController {
 
-    private final SsoAccountApi ssoAccountApi;
+    private final SsoApi ssoApi;
 
     /**
      * 邮箱注册
@@ -70,7 +71,7 @@ public class AccountController {
         log.info("处理邮箱注册请求");
 
         try {
-            RegisterResult data = ssoAccountApi.registerByEmail(request);
+            RegisterResult data = ssoApi.account().registerByEmail(request);
             return ResultUtil.success("注册成功", data);
         } catch (Exception e) {
             log.warn("Register by email failed: {}", e.getMessage(), e);
@@ -97,7 +98,7 @@ public class AccountController {
         log.info("处理密码登录请求");
 
         try {
-            LoginResult data = ssoAccountApi.passwordLogin(request);
+            LoginResult data = ssoApi.account().passwordLogin(request);
             return ResultUtil.success("登录成功", data);
         } catch (Exception e) {
             log.warn("Password login failed: {}", e.getMessage(), e);
@@ -123,7 +124,7 @@ public class AccountController {
         log.info("处理修改密码请求");
 
         try {
-            ssoAccountApi.changePassword(request);
+            ssoApi.account().changePassword(request);
             return ResultUtil.success("修改密码成功", null);
         } catch (Exception e) {
             log.warn("Change password failed: {}", e.getMessage(), e);
@@ -171,7 +172,7 @@ public class AccountController {
                 .build();
 
         try {
-            ssoAccountApi.revokeToken(accessToken, sdkRequest);
+            ssoApi.account().revokeToken(accessToken, sdkRequest);
             return ResultUtil.success("注销成功", null);
         } catch (Exception e) {
             log.warn("Revoke token failed: {}", e.getMessage(), e);

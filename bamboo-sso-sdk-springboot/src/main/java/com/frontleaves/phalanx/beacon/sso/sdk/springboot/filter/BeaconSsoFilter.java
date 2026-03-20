@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -78,9 +79,9 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         // 1. 从请求头获取 Bearer Token
         String token = extractBearerToken(request);
@@ -123,7 +124,7 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         List<String> excludeUrls = properties.getExcludeUrls();
         if (excludeUrls == null || excludeUrls.isEmpty()) {
             return false;
@@ -140,7 +141,7 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
      * @param request HTTP 请求
      * @return Token 字符串，如果不存在或格式错误则返回 null
      */
-    private String extractBearerToken(HttpServletRequest request) {
+    private String extractBearerToken(@NonNull HttpServletRequest request) {
         return Optional.ofNullable(request.getHeader(HEADER_AUTHORIZATION))
                 .filter(header -> header.startsWith(BEARER_PREFIX))
                 .map(header -> header.substring(BEARER_PREFIX.length()))
@@ -154,7 +155,7 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
      * @param response HTTP 响应
      * @param message  错误消息
      */
-    private void writeUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
+    private void writeUnauthorizedResponse(@NonNull HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json;charset=UTF-8");
 
