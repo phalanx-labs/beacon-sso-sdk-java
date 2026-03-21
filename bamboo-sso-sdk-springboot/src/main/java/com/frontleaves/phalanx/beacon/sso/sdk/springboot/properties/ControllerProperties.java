@@ -1,4 +1,4 @@
-package com.frontleaves.phalanx.beacon.sso.sdk.base.properties;
+package com.frontleaves.phalanx.beacon.sso.sdk.springboot.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -15,6 +15,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * beacon:
  *   sso:
  *     controller:
+ *       path-prefix: /api/v1/beacon  # 统一路径前缀
  *       auth:
  *         enabled: true
  *       user:
@@ -27,6 +28,23 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @ConfigurationProperties(prefix = "beacon.sso.controller")
 public class ControllerProperties {
+
+    /**
+     * Controller API 路径前缀
+     * <p>
+     * 所有 Controller 的路径都会在此前缀下，例如：
+     * <ul>
+     *   <li>AuthController: {path-prefix}/auth</li>
+     *   <li>UserController: {path-prefix}/user</li>
+     *   <li>AccountController: {path-prefix}/account</li>
+     *   <li>MerchantController: {path-prefix}/merchant</li>
+     *   <li>PublicController: {path-prefix}/public</li>
+     * </ul>
+     * <p>
+     * 默认值: {@code /api/v1/beacon}
+     * </p>
+     */
+    private String pathPrefix = "/api/v1/beacon";
 
     /**
      * AuthController (OAuth 认证) 启用配置
