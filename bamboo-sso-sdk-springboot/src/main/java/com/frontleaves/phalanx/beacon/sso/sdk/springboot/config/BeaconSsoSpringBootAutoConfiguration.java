@@ -4,9 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.client.SsoApi;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.config.AutoConfiguration;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.ControllerProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.InjectDataAspect;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect.PermissionAspect;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.*;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.BeaconSsoAccountController;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.BeaconSsoAuthController;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.BeaconSsoMerchantController;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.BeaconSsoPublicController;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller.BeaconSsoUserController;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.AuthLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
@@ -15,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -45,6 +51,7 @@ import org.springframework.context.annotation.Import;
 @Import({
         AutoConfiguration.class
 })
+@EnableConfigurationProperties(ControllerProperties.class)
 public class BeaconSsoSpringBootAutoConfiguration {
 
     // ==================== Repository ====================
@@ -140,70 +147,90 @@ public class BeaconSsoSpringBootAutoConfiguration {
     // ==================== Controller ====================
 
     /**
-     * 创建 AuthController Bean
+     * 创建 BeaconSsoAuthController Bean
+     * <p>
+     * 可通过配置 {@code beacon.sso.controller.auth.enabled=false} 禁用
+     * </p>
      *
      * @param authLogic 认证逻辑处理类
      * @param userLogic 用户业务逻辑处理类
-     * @return AuthController 实例
+     * @return BeaconSsoAuthController 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    public AuthController authController(
+    @ConditionalOnProperty(prefix = "beacon.sso.controller.auth", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public BeaconSsoAuthController beaconSsoAuthController(
             AuthLogic authLogic,
             UserLogic userLogic
     ) {
-        return new AuthController(authLogic, userLogic);
+        return new BeaconSsoAuthController(authLogic, userLogic);
     }
 
     /**
-     * 创建 UserController Bean
+     * 创建 BeaconSsoUserController Bean
+     * <p>
+     * 可通过配置 {@code beacon.sso.controller.user.enabled=false} 禁用
+     * </p>
      *
      * @param ssoApi SSO API 门面类
-     * @return UserController 实例
+     * @return BeaconSsoUserController 实例
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(SsoApi.class)
-    public UserController userController(SsoApi ssoApi) {
-        return new UserController(ssoApi);
+    @ConditionalOnProperty(prefix = "beacon.sso.controller.user", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public BeaconSsoUserController beaconSsoUserController(SsoApi ssoApi) {
+        return new BeaconSsoUserController(ssoApi);
     }
 
     /**
-     * 创建 AccountController Bean
+     * 创建 BeaconSsoAccountController Bean
+     * <p>
+     * 可通过配置 {@code beacon.sso.controller.account.enabled=false} 禁用
+     * </p>
      *
      * @param ssoApi SSO API 门面类
-     * @return AccountController 实例
+     * @return BeaconSsoAccountController 实例
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(SsoApi.class)
-    public AccountController accountController(SsoApi ssoApi) {
-        return new AccountController(ssoApi);
+    @ConditionalOnProperty(prefix = "beacon.sso.controller.account", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public BeaconSsoAccountController beaconSsoAccountController(SsoApi ssoApi) {
+        return new BeaconSsoAccountController(ssoApi);
     }
 
     /**
-     * 创建 PublicController Bean
+     * 创建 BeaconSsoPublicController Bean
+     * <p>
+     * 可通过配置 {@code beacon.sso.controller.public-interface.enabled=false} 禁用
+     * </p>
      *
      * @param ssoApi SSO API 门面类
-     * @return PublicController 实例
+     * @return BeaconSsoPublicController 实例
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(SsoApi.class)
-    public PublicController publicController(SsoApi ssoApi) {
-        return new PublicController(ssoApi);
+    @ConditionalOnProperty(prefix = "beacon.sso.controller.public-interface", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public BeaconSsoPublicController beaconSsoPublicController(SsoApi ssoApi) {
+        return new BeaconSsoPublicController(ssoApi);
     }
 
     /**
-     * 创建 MerchantController Bean
+     * 创建 BeaconSsoMerchantController Bean
+     * <p>
+     * 可通过配置 {@code beacon.sso.controller.merchant.enabled=false} 禁用
+     * </p>
      *
      * @param ssoApi SSO API 门面类
-     * @return MerchantController 实例
+     * @return BeaconSsoMerchantController 实例
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(SsoApi.class)
-    public MerchantController merchantController(SsoApi ssoApi) {
-        return new MerchantController(ssoApi);
+    @ConditionalOnProperty(prefix = "beacon.sso.controller.merchant", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public BeaconSsoMerchantController beaconSsoMerchantController(SsoApi ssoApi) {
+        return new BeaconSsoMerchantController(ssoApi);
     }
 }

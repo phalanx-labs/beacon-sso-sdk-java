@@ -38,9 +38,9 @@ import org.springframework.web.servlet.view.RedirectView;
  */
 @Slf4j
 @RestController
-@RequestMapping("${beacon.sso.oauth-path:/api/v1/auth}")
+@RequestMapping("${beacon.sso.oauth-path:/api/v1/beacon/auth}")
 @RequiredArgsConstructor
-public class AuthController {
+public class BeaconSsoAuthController {
 
     /**
      * Session 中存储 Token 的键名

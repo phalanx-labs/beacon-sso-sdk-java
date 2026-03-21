@@ -33,9 +33,9 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("${beacon.sso.public-path:/api/v1/public}")
+@RequestMapping("${beacon.sso.public-path:/api/v1/beacon/public}")
 @RequiredArgsConstructor
-public class PublicController {
+public class BeaconSsoPublicController {
 
     private final SsoApi ssoApi;
 
