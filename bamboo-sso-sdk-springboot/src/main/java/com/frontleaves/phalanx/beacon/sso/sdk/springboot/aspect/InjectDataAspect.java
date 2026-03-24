@@ -2,7 +2,7 @@ package com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.IntrospectResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.annotation.InjectData;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.constant.SsoWebConstants;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -68,8 +68,7 @@ public class InjectDataAspect {
         }
 
         // 获取令牌自省信息
-        IntrospectResult introspection = (IntrospectResult) request
-                .getAttribute(BeaconSsoFilter.ATTR_INTROSPECTION);
+        IntrospectResult introspection = (IntrospectResult) request.getAttribute(SsoWebConstants.ATTR_INTROSPECTION);
 
         if (introspection == null) {
             log.debug("No IntrospectResult found in request attributes");

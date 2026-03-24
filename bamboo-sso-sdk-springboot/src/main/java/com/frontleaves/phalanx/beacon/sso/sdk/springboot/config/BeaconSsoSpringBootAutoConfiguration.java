@@ -131,17 +131,19 @@ public class BeaconSsoSpringBootAutoConfiguration {
     /**
      * 创建 BeaconSsoFilter Bean
      *
-     * @param userLogic  用户业务逻辑处理类
-     * @param properties SSO 配置属性
+     * @param userLogic              用户业务逻辑处理类
+     * @param properties             SSO 配置属性
+     * @param controllerProperties   Controller 配置属性
      * @return BeaconSsoFilter 实例
      */
     @Bean
     @ConditionalOnMissingBean
     public BeaconSsoFilter beaconSsoFilter(
             UserLogic userLogic,
-            BeaconSsoProperties properties
+            BeaconSsoProperties properties,
+            ControllerProperties controllerProperties
     ) {
-        return new BeaconSsoFilter(userLogic, properties);
+        return new BeaconSsoFilter(userLogic, properties, controllerProperties);
     }
 
     // ==================== Controller ====================

@@ -16,6 +16,7 @@ import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.TokenResu
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.ValidateResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.utility.PkceUtil;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.constant.SsoWebConstants;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.repository.OAuthStateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -201,7 +202,7 @@ public class AuthLogic {
      * @return 如果撤销成功返回 {@code true}，否则返回 {@code false}
      */
     public Mono<Boolean> revokeToken(String token) {
-        return revokeToken(token, "access_token");
+        return revokeToken(token, SsoWebConstants.TOKEN_TYPE_HINT_ACCESS);
     }
 
     /**

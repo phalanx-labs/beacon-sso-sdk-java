@@ -1,17 +1,19 @@
 package com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.frontleaves.phalanx.beacon.sso.sdk.base.constant.SsoHeaderConstants;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.exception.TokenException;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.IntrospectResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.properties.BeaconSsoProperties;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.constant.SsoWebConstants;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.properties.ControllerProperties;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.util.AntPathMatcher;
@@ -34,28 +36,7 @@ import java.util.Optional;
  * @since 0.0.1
  */
 @Slf4j
-@RequiredArgsConstructor
 public class BeaconSsoFilter extends OncePerRequestFilter {
-
-    /**
-     * 请求属性键：令牌自省信息
-     */
-    public static final String ATTR_INTROSPECTION = "beacon.sso.introspection";
-
-    /**
-     * 请求属性键：访问令牌
-     */
-    public static final String ATTR_ACCESS_TOKEN = "beacon.sso.access_token";
-
-    /**
-     * Authorization 请求头名称
-     */
-    private static final String HEADER_AUTHORIZATION = "Authorization";
-
-    /**
-     * Bearer Token 前缀
-     */
-    private static final String BEARER_PREFIX = "Bearer ";
 
     /**
      * 用户业务逻辑处理
@@ -76,6 +57,36 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
      * Ant 路径匹配器
      */
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+    /**
+     * 默认排除路径（无需令牌验证的公开接口）
+     */
+    private final List<String> defaultExcludeUrls;
+
+    /**
+     * 构造函数
+     *
+     * @param userLogic            用户业务逻辑处理
+     * @param properties           SSO 配置属性
+     * @param controllerProperties Controller 配置属性
+     */
+    public BeaconSsoFilter(
+            UserLogic userLogic,
+            BeaconSsoProperties properties,
+            @NonNull ControllerProperties controllerProperties
+    ) {
+        this.userLogic = userLogic;
+        this.properties = properties;
+
+        // 使用配置的路径前缀构建默认排除路径
+        String prefixPath = controllerProperties.getPathPrefix();
+        this.defaultExcludeUrls = List.of(
+                prefixPath + "/account/login/**",
+                prefixPath + "/account/register/**",
+                prefixPath + "/public/**",
+                prefixPath + "/auth/**"
+        );
+    }
 
     @Override
     protected void doFilterInternal(
@@ -106,8 +117,8 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
             }
 
             // 4. 将用户信息存入请求属性
-            request.setAttribute(ATTR_INTROSPECTION, introspection);
-            request.setAttribute(ATTR_ACCESS_TOKEN, token);
+            request.setAttribute(SsoWebConstants.ATTR_INTROSPECTION, introspection);
+            request.setAttribute(SsoWebConstants.ATTR_ACCESS_TOKEN, token);
 
             log.debug("用户 {} 的令牌验证成功", introspection.getSub());
 
@@ -123,22 +134,12 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
         }
     }
 
-    /**
-     * 默认排除路径（无需令牌验证的公开接口）
-     */
-    private static final List<String> DEFAULT_EXCLUDE_URLS = List.of(
-            "/api/v1/account/login/**",
-            "/api/v1/account/register/**",
-            "/api/v1/public/**",
-            "/api/v1/auth/**"
-    );
-
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String requestPath = request.getRequestURI();
 
         // 1. 检查默认排除路径
-        if (DEFAULT_EXCLUDE_URLS.stream()
+        if (defaultExcludeUrls.stream()
                 .anyMatch(pattern -> pathMatcher.match(pattern, requestPath))) {
             return true;
         }
@@ -160,9 +161,9 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
      * @return Token 字符串，如果不存在或格式错误则返回 null
      */
     private String extractBearerToken(@NonNull HttpServletRequest request) {
-        return Optional.ofNullable(request.getHeader(HEADER_AUTHORIZATION))
-                .filter(header -> header.startsWith(BEARER_PREFIX))
-                .map(header -> header.substring(BEARER_PREFIX.length()))
+        return Optional.ofNullable(request.getHeader(SsoHeaderConstants.AUTHORIZATION))
+                .filter(header -> header.startsWith(SsoHeaderConstants.BEARER_PREFIX))
+                .map(header -> header.substring(SsoHeaderConstants.BEARER_PREFIX.length()))
                 .filter(StringUtils::hasText)
                 .orElse(null);
     }
@@ -175,7 +176,7 @@ public class BeaconSsoFilter extends OncePerRequestFilter {
      */
     private void writeUnauthorizedResponse(@NonNull HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json;charset=UTF-8");
+        response.setContentType(SsoWebConstants.CONTENT_TYPE_JSON_UTF8);
 
         BaseResponse<Void> errorResponse = new BaseResponse<>(
                 ErrorCode.UNAUTHORIZED.getOutput(),

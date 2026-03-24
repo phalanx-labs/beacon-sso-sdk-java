@@ -2,6 +2,7 @@ package com.frontleaves.phalanx.beacon.sso.sdk.springboot.controller;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.TokenResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.ValidateResult;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.constant.SsoWebConstants;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.AuthLogic;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.logic.UserLogic;
 import com.xlf.utility.BaseResponse;
@@ -152,13 +153,13 @@ public class BeaconSsoAuthController {
         if (token != null) {
             // 撤销访问令牌
             if (token.getAccessToken() != null) {
-                authLogic.revokeToken(token.getAccessToken(), "access_token").block();
+                authLogic.revokeToken(token.getAccessToken(), SsoWebConstants.TOKEN_TYPE_HINT_ACCESS).block();
                 log.debug("Access token revoked");
             }
 
             // 撤销刷新令牌
             if (token.getRefreshToken() != null) {
-                authLogic.revokeToken(token.getRefreshToken(), "refresh_token").block();
+                authLogic.revokeToken(token.getRefreshToken(), SsoWebConstants.TOKEN_TYPE_HINT_REFRESH).block();
                 log.debug("Refresh token revoked");
             }
         }

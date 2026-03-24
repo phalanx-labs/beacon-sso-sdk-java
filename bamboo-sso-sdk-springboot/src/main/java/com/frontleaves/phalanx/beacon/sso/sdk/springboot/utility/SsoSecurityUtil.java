@@ -2,7 +2,7 @@ package com.frontleaves.phalanx.beacon.sso.sdk.springboot.utility;
 
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.IntrospectResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.user.UserinfoResult;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.constant.SsoWebConstants;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 
@@ -38,7 +38,7 @@ public final class SsoSecurityUtil {
      * @return 包含 Token 的 Optional，如果不存在则返回空的 Optional
      */
     public static Optional<String> getCurrentToken(HttpServletRequest request) {
-        Object token = request.getAttribute(BeaconSsoFilter.ATTR_ACCESS_TOKEN);
+        Object token = request.getAttribute(SsoWebConstants.ATTR_ACCESS_TOKEN);
         if (token instanceof String tokenStr && StringUtils.hasText(tokenStr)) {
             return Optional.of(tokenStr);
         }
@@ -80,7 +80,7 @@ public final class SsoSecurityUtil {
      * @return 包含令牌自省信息的 Optional，如果不存在则返回空的 Optional
      */
     public static Optional<IntrospectResult> getCurrentIntrospection(HttpServletRequest request) {
-        Object introspection = request.getAttribute(BeaconSsoFilter.ATTR_INTROSPECTION);
+        Object introspection = request.getAttribute(SsoWebConstants.ATTR_INTROSPECTION);
         if (introspection instanceof IntrospectResult introspectResult) {
             return Optional.of(introspectResult);
         }

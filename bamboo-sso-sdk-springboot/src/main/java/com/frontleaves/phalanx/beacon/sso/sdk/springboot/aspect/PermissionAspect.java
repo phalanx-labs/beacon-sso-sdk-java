@@ -3,7 +3,7 @@ package com.frontleaves.phalanx.beacon.sso.sdk.springboot.aspect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.frontleaves.phalanx.beacon.sso.sdk.base.models.result.oauth.IntrospectResult;
 import com.frontleaves.phalanx.beacon.sso.sdk.springboot.annotation.PermissionVerify;
-import com.frontleaves.phalanx.beacon.sso.sdk.springboot.filter.BeaconSsoFilter;
+import com.frontleaves.phalanx.beacon.sso.sdk.springboot.constant.SsoWebConstants;
 import com.xlf.utility.BaseResponse;
 import com.xlf.utility.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -99,7 +99,7 @@ public class PermissionAspect {
 
         // 获取令牌自省信息
         IntrospectResult introspection = (IntrospectResult) request
-                .getAttribute(BeaconSsoFilter.ATTR_INTROSPECTION);
+                .getAttribute(SsoWebConstants.ATTR_INTROSPECTION);
 
         if (introspection == null) {
             log.warn("请求中未找到认证数据");
@@ -188,7 +188,7 @@ public class PermissionAspect {
 
         try {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType("application/json;charset=UTF-8");
+            response.setContentType(SsoWebConstants.CONTENT_TYPE_JSON_UTF8);
 
             BaseResponse<Void> errorResponse = new BaseResponse<>(
                     ErrorCode.FORBIDDEN.getOutput(),
